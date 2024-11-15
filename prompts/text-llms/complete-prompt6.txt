@@ -1,0 +1,69 @@
+Generate the code for the function equation_v1. The purpose of equation_v1 is to describe the field u_true that will be provided below.
+Your task is to find the mathematical function skeleton given data on spatial and temproral grids and the values of unknown mathematical function u_true(time, space) on those grids. 
+
+-The function equation_v1 should return one of the allowed derivative of u_true: du/dx0, du/dx1, d^2u/dx0^2, d^2u/dx1^2
+-The proposed function skeleton must have a better score than the ones in exp_buffer - the experience buffer, where the pairs of previously descovered equations and their scores are stored.
+-The new stucture of equation_v1 must be unique inside the experience buffer.
+-Thus, equation_v1 must be found with the structure that maximizes the evaluate function.
+Make sure to only output the function equation_v1.
+
+import numpy as np
+from scipy.optimize import minimize
+
+
+def loss_function(params, x0, x1, u_true):
+    u_pred = equation_v1(x0, x1, params)[0]
+    return np.mean((u_pred-u_true)**2)
+
+
+def evaluate(data: dict) -> float:
+    """ Evaluate equation of input and output observations."""
+    # Load true data observations
+    inputs, outputs = data['inputs'], data['outputs']
+
+    # Optimize equation skeleton parameters
+    loss_partial = lambda params: loss_function(params, *inputs, outputs)
+    params_initial_guess = np.array([1.0]*P)
+    result = minimize(loss_partial, params_initial_guess, method='BFGS')
+    optimized_params = result.x
+
+    # Return evaluation score
+    score = loss_function(optimized_params, *inputs, outputs)
+    return -score if not np.isnan(score) and not np.isinf(score) else None
+
+
+def equation_v0(x0: np.ndarray, x1: np.ndarray, params: np.ndarray) -> np.ndarray:
+    """Find mathematical function skeleton that describes u_true data the most.
+    Args:
+        x0: Time variable.
+        x1: Space variable.
+        params: Array of numeric parameters to be optimized.
+    Return:
+        A tuple of numpy array representing the derivative of u_true (choose one); a string of chosen derivative.
+    """
+    return (params[0] * x0 + params[1] * x1, "d^2u/dx0^2")
+
+
+def equation_v1(x0: np.ndarray, x1: np.ndarray, params: np.ndarray) -> np.ndarray:
+    """Your task is to generate code here with an example of the function given at equation_v0"""
+
+
+space = np.array(
+[0.000000000000000000e+00, 4.444444444444444198e-01, 8.888888888888888395e-01, 1.333333333333333259e+00, 1.777777777777777679e+00, 2.222222222222222321e+00, 2.666666666666666519e+00, 3.111111111111110716e+00, 3.555555555555555358e+00, 4.000000000000000000e+00])
+
+time = np.array(
+[0.000000000000000000e+00, 1.111111111111111160e+00, 2.222222222222222321e+00, 3.333333333333333481e+00, 4.444444444444444642e+00, 5.555555555555555358e+00, 6.666666666666666963e+00, 7.777777777777778567e+00, 8.888888888888889284e+00, 1.000000000000000000e+01])
+
+u_true = np.array(
+{u_array})
+
+grids = np.meshgrid(t, x, indexing='ij')
+data = {{"inputs": grids, "outputs": u_true}}
+
+
+"""
+The experience buffer stores the optimization track with the best equations and their corresponding scores.
+The pairs equation-score are given in the form of a dictionary. The equations have their params already optimized. 
+Refer to the buffer while generating the equation_v1.
+"""
+exp_buffer = {{}} # curently empty

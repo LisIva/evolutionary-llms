@@ -1,0 +1,108 @@
+Generate the code for the function equation_v1. The purpose of equation_v1 is to describe the field u that will be provided below.
+Your task is to find the partial differential equation skeleton to which the function u(t, x) is a solution.
+
+### Example: ###
+
+Input: u = np.array([[0., 4.], [24., 28.]]), x = np.array([0., 2.]), t = np.array([0., 2.])
+Output: d^2u/dt^2 = -2 * d^2u/dtdx + 3 * d^2u/dx^2
+Explanation: the data on u seems to be from the equation u(t, x) = 3t^3 + x^2.
+For which the governing partial differential equation is d^2u/dt^2 = -2 * d^2u/dtdx + 3 * d^2u/dx^2
+
+### end of example ###
+
+
+Step-by-step guide for solving the task:
+1. Analyze the data u, x and t.
+2. Look at the set of available derivatives set_of_derivs for the differential equation construction.
+3. Choose one derivative from the set as the balancing term (the term on the left side of the differential equation - u_left_derivative, will be returned by the function equation_v1).
+4. Look at the experience buffer exp_buffer. If the buffer is not empty your task is to guess an equation that will have a higher score. The buffer may provide some hints about the form of the differential equation.
+5. Construct the right side of the differential equation by guessing based on input data u, x, t, exp_buffer and set of available derivatives set_of_derivs.
+6. Put the string-form of the constructed equation into the experience buffer. If the obtained string-form already exists inside the experience buffer, start over from step 2, until unique structure is found.
+
+
+Requirements:
+-The new structure of equation_v1 must be unique inside the experience buffer: make sure the new string_form_of_the_equation is unique among the keys of the exp_buffer.
+-For constructing equation_v1 you can use any function of t, x, u or any available derivative of u except for the balancing term.
+-Do not use the balancing term on the right side of the equation.
+-Equation_v1 must be found with the structure that maximizes the evaluate function.
+-Make sure the function equation_v1 uses at least one derivative as its return value (namely, equation_v1(...)[0] uses some derivatives).
+-Make sure to output the function equation_v1 first and everything else after it.
+
+
+Additional information:
+-The experience buffer stores the optimization track with the best equations and their corresponding scores. The pairs equation-score are given in the form of a dictionary. The equations have their params already optimized.
+-The keys of experience buffer are the string forms of the constructed equations. They are returned by equation_v1() in string_form_of_the_equation value. string_form_of_the_equation merges the left and the right side of the equation into one.
+-The array "c" in the experience buffer is the "params" argument used in the code.
+-The equations in the experience buffer are in their full form. The equation starts with the left_deriv_name and then goes the right side decided in equation_v1
+-The information on the allowed derivatives is given in set_of_derivs. Pay attention that set_of_derivs is a set of keys of derivs_dict.
+
+
+import numpy as np
+from scipy.optimize import minimize
+
+
+def loss_function(params, t, x, u, derivs_dict, left_deriv_name):
+    """ Args:
+         x0: Time variable.
+         x1: Space variable.
+         u_true: Values of the input function.
+         params: Array of numeric parameters to be optimized.
+         left_deriv_name: The balancing term on the left side of the equation.
+    """
+    u_pred = equation_v1(t, x, u, derivs_dict, params)[0]
+    return np.mean((u_pred-derivs_dict[left_deriv_name])**2)
+
+
+def evaluate(data: dict) -> float:
+    """ Evaluate the constructed equation"""
+    # Load true data observations
+    inputs, derivs_dict, left_deriv_name = data['inputs'], data["derivs_dict"], data['left_deriv_name']
+
+    # Optimize equation skeleton parameters
+    loss_partial = lambda params: loss_function(params, *inputs, derivs_dict, left_deriv_name)
+    params_initial_guess = np.array([1.0]*P)
+    result = minimize(loss_partial, params_initial_guess, method='BFGS')
+    optimized_params = result.x
+
+    # Return evaluation score
+    score = loss_function(optimized_params, *inputs, derivs_dict, left_deriv_name)
+    return -score if not np.isnan(score) and not np.isinf(score) else None
+
+
+### Input data ###
+
+exp_buffer = {{
+               "d^2u/dt^2 = c[0] * du/dt + c[1] * du/dx + c[2] * u * t": -1690,
+               "du/dt = c[0] * u + c[1] * t * du/dx + c[2] * x * d^2u/dt^2": -391.765,
+               "d^2u/dt^2 = c[0] * du/dt + c[1] * du/dx + c[2] * u": -295.0,
+               "du/dt = c[0] * u + c[1] * x * du/dx + c[2] * t * d^2u/dt^2": -66.97,
+               "du/dt = c[0] * u + c[1] * x * du/dx + c[2] * d^2u/dt^2": -31.873,
+               "du/dt = c[0] * u + c[1] * du/dx + c[2] * d^2u/dt^2": -31.873,
+               }}
+
+t = np.array({t_array})
+x = np.array({x_array})
+u_true = np.array(
+{u_array})
+set_of_derivs = {{"du/dx", "du/dt", "d^2u/dt^2"}}
+
+### end of input data ###
+
+""" An example of desired output: """
+def equation_v0(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    """
+    Return:
+        A tuple of:
+           1. numpy array representing the derivative of u_true (choose one);
+           2. a string of chosen derivative.
+           3. the textual representation of the constructed equation;
+    """
+    right_side = params[0] * u * t + params[1] * x * derivs_dict["du/dx"] * derivs_dict["du/dt"]
+    left_deriv_name = "d^2u/dt^2"
+    string_form_of_the_equation = "d^2u/dt^2 = c[0] * u * t + c[1] * x * du/dx * du/dt"
+
+    return (right_side, left_deriv_name, string_form_of_the_equation)
+
+""" The function to complete: """
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    """Your task is to generate code here with an example of the function given at equation_v0"""

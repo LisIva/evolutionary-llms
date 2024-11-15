@@ -1,0 +1,76 @@
+Generate the code for the function equation_v1. The purpose of equation_v1 is to describe the field u_true that will be provided below. 
+Your task is to find the mathematical function skeleton given data on spatial and temproral grids and the values of unknown mathematical function u_true(time, space) on those grids; 
+the proposed function skeleton must have a better score than the ones in exp_buffer - the experience buffer, where the pairs of previously descovered equations and their scores are stored.
+Thus, equation_v1 must be found with the structure that maximizes the evaluate function.
+Make sure to only output the function equation_v1.
+
+import numpy as np
+from scipy.optimize import minimize
+
+
+def loss_function(params, x0, x1, u_true):
+    u_pred = equation(x0, x1, params)
+    return np.mean((u_pred-u_true)**2)
+
+
+def evaluate(data: dict) -> float:
+    """ Evaluate equation of input and output observations."""
+    # Load true data observations
+    inputs, outputs = data['inputs'], data['outputs']
+
+    # Optimize equation skeleton parameters
+    loss_partial = lambda params: loss_function(params, *inputs, outputs)
+    params_initial_guess = np.array([1.0]*P)
+    result = minimize(loss_partial, params_initial_guess, method='BFGS')
+    optimized_params = result.x
+
+    # Return evaluation score
+    score = loss_function(optimized_params, *inputs, outputs)
+    return -score if not np.isnan(score) and not np.isinf(score) else None
+
+
+def equation_v0(x0: np.ndarray, x1: np.ndarray, params: np.ndarray) -> np.ndarray:
+    """Find mathematical function skeleton that describes u_true data the most.
+    Args:
+        x0: Time variable.
+        x1: Space variable.
+        params: Array of numeric parameters to be optimized.
+    Return:
+        A numpy array representing the field u_true.
+    """
+    return params[0] * x0 + params[1] * x1
+
+
+def equation_v1(x0: np.ndarray, x1: np.ndarray, params: np.ndarray) -> np.ndarray:
+    """Your task is to generate code here with an example of the function given at equation_v0"""
+
+
+space = np.array(
+[0.000000000000000000e+00, 4.444444444444444198e-01, 8.888888888888888395e-01, 1.333333333333333259e+00, 1.777777777777777679e+00, 2.222222222222222321e+00, 2.666666666666666519e+00, 3.111111111111110716e+00, 3.555555555555555358e+00, 4.000000000000000000e+00])
+
+time = np.array(
+[0.000000000000000000e+00, 1.111111111111111160e+00, 2.222222222222222321e+00, 3.333333333333333481e+00, 4.444444444444444642e+00, 5.555555555555555358e+00, 6.666666666666666963e+00, 7.777777777777778567e+00, 8.888888888888889284e+00, 1.000000000000000000e+01])
+
+u_true = np.array(
+[[0.000000000000000000e+00, 1.975308641975308532e-01, 7.901234567901234129e-01, 1.777777777777777679e+00, 3.160493827160493652e+00, 4.938271604938272219e+00, 7.111111111111110716e+00, 9.679012345679009144e+00, 1.264197530864197461e+01, 1.600000000000000000e+01],
+ [0.000000000000000000e+00, 3.245846669714983257e+00, 6.886755067825028220e+00, 1.092272519433013400e+01, 1.535375704923030327e+01, 2.017985063252553246e+01, 2.540100594421582159e+01, 3.101722298430117064e+01, 3.702850175278159384e+01, 4.343484224965706630e+01],
+ [0.000000000000000000e+00, 2.458405730833715097e+01, 4.956317634506936542e+01, 7.493735711019661494e+01, 1.007065996037189706e+02, 1.268709038256363613e+02, 1.534302697759488012e+02, 1.803846974546563047e+02, 2.077341868617589284e+02, 2.354787379972565589e+02],
+ [0.000000000000000000e+00, 8.250205761316874487e+01, 1.653991769547325532e+02, 2.486913580246913966e+02, 3.323786008230453604e+02, 4.164609053497943023e+02, 5.009382716049383362e+02, 5.858106995884774051e+02, 6.710781893004116228e+02, 7.567407407407408755e+02],
+ [0.000000000000000000e+00, 1.952897424173144714e+02, 3.909745465630240346e+02, 5.870544124371285761e+02, 7.835293400396283232e+02, 9.803993293705228780e+02, 1.177664380429812581e+03, 1.375324493217497320e+03, 1.573379667733577662e+03, 1.771829903978052471e+03],
+ [0.000000000000000000e+00, 3.812370065538789845e+02, 7.628690748361530041e+02, 1.144896204846822002e+03, 1.527318396585886376e+03, 1.910135650053345444e+03, 2.293347965249199660e+03, 2.676955342173448571e+03, 3.060957780826093767e+03, 3.445355281207132975e+03],
+ [0.000000000000000000e+00, 6.586337448559672794e+02, 1.317662551440329480e+03, 1.977086419753086830e+03, 2.636905349794239100e+03, 3.297119341563786293e+03, 3.957728395061729316e+03, 4.618732510288066806e+03, 5.280131687242799671e+03, 5.941925925925927004e+03],
+ [0.000000000000000000e+00, 1.045769852156683783e+03, 2.091934766041762941e+03, 3.138494741655236339e+03, 4.185449778997105568e+03, 5.232799878067369718e+03, 6.280545038866028335e+03, 7.328685261393082328e+03, 8.377220545648531697e+03, 9.426150891632376442e+03],
+ [0.000000000000000000e+00, 1.560935223289133091e+03, 3.122265508306661559e+03, 4.683990855052583356e+03, 6.246111263526902803e+03, 7.808626733729615808e+03, 9.371537265660723278e+03, 1.093484285932022613e+04, 1.249854351470812617e+04, 1.406263923182441977e+04],
+ [0.000000000000000000e+00, 2.222419753086419860e+03, 4.445234567901234186e+03, 6.668444444444443434e+03, 8.892049382716049877e+03, 1.111604938271604988e+04, 1.334044444444444343e+04, 1.556523456790123237e+04, 1.779041975308641850e+04, 2.001600000000000000e+04],
+])
+
+grids = np.meshgrid(t, x, indexing='ij')
+data = {"inputs": grids, "outputs": u_true}
+
+"""
+The experience buffer stores the optimization track with the best equations and their corresponding scores.
+The pairs equation-score are given in the form of a dictionary. Refer to it while generating the equation_v1.
+"""
+exp_buffer = {
+"params[0] * x0 + params[1] * x1 + params[2] * x0 * x1 + params[3] * x0**2 + params[4] * x1**2": -1103490,
+}

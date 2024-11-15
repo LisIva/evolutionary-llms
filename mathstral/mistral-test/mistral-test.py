@@ -6,7 +6,7 @@ from langchain.chains import LLMChain
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from huggingface_hub import login
 from time import time
-
+import creds
 
 
 def generate_response(question, template, llm):
@@ -23,7 +23,7 @@ quantization_config = BitsAndBytesConfig(
     bnb_4bit_use_double_quant=True,
 )
 
-login(token="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")
+login(token=creds.hf_key)
 
 model_4bit = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-v0.1", device_map="auto")#, quantization_config=quantization_config)
 tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1")

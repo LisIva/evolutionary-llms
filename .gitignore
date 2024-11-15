@@ -1,6 +1,17 @@
 .venv
 .idea
+*.docx
+*.pdf
 venv/
 
+creds.py
 mathstral_model/
 mathstral_tokenizer/
+data/qwen tries
+data/text values
+tokenization/d1_tokenizer
+tokenization/OmniTokenizer
+tokenization/imagenet_k600_vae.ckpt
+tokenization/imagenet_mit.ckpt
+tokenization/imagenet_ucf_vae.ckpt
+dummy-script.py
