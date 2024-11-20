@@ -18,12 +18,8 @@ from promptconstructor.combine_txts import get_simple_prompt
 
 PARENT_PATH = Path().absolute().parent
 MODEL = "qwen/qwen-2-72b-instruct"
-PROMPT_NAME = "space-sense6"
 
-'''
-1. провести эксперименты с u_t = u*u_x
-'''
-
+# minimum для simple burgers ~14500 tokens
 # frac{du}{dt} = c[0] \cdot t + c[1] \cdot \frac{du}{dx} + c[2] \cdot u + c[3] \cdot x
 def info(prompt, response):
     def cost(prompt, response):
@@ -34,6 +30,7 @@ def info(prompt, response):
     print(f"\n\nPrice: {cost(prompt, response):.5f}")
     print(f"Price with system prompt: {cost(prompt, response) + system_prompt_price:.5f}")
     print(f"Len(in_symbols): {len(prompt)}")
+    print(f"Length of tokens, total: {response_big.usage.prompt_tokens + response_big.usage.completion_tokens}")
     print(f"Len(out_symbols): {len(response)}")
 
 
@@ -55,6 +52,8 @@ response_big = client.chat.completions.create(
 )
 
 response = response_big.choices[0].message.content
+# num_comp_tokens = response_big.usage.prompt_tokens
+# num_comp_tokens = response_big.usage.completion_tokens
 print("Response:", response)
 
 info(prompt, response)
