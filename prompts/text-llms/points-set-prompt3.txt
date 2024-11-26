@@ -1,5 +1,11 @@
 What is a possible function with the general equation form du/dt = F(t, x, u, du/dx) that could be described with the set of points named points_set, that have the form of 't x u du/dx du/dt'. Give an answer in the function equation_v1 constructing it in a way described by equation_v0.
-The answer should be unique inside the dictionary exp_buffer, which stores previous attempts to find the equation evaluated with evaluate function.
+The dictionary exp_buffer stores previous attempts to find the equation evaluated with evaluate function. While generating equation_v1 look at the exp_buffer and use the scores presented there to make a new guess about the equation structure. The best score is 0.
+Note that although the general equation form is du/dt = F(t, x, u, du/dx), the resulting equation may take on simpler forms, like du/dt = F(t, du/dx).
+Make sure the suggested equation is dependent on at least one derivative, so in the provided case du/dx must be included.
+
+Requirements:
+1. First look at the exp_buffer and then suggest the equation, the string form of which is not already there!
+2. Do not copy the equations from the exp_buffer!
 
 import numpy as np
 from scipy.optimize import minimize
@@ -20,14 +26,22 @@ def evaluate(data: dict) -> float:
 
     # Return evaluation score
     score = loss_function(optimized_params, *inputs, derivs_dict)
-    return -score if not np.isnan(score) and not np.isinf(score) else None
+    return score if not np.isnan(score) and not np.isinf(score) else None
 
 
 #/Input data
 
 points_set =
 {points_set}
-exp_buffer = {{"du/dt = c[0] * t + c[1] * du/dx + c[2] * u  + c[3] * x": -103.97}}
+exp_buffer = {{
+"du/dt = c[0] * t * du/dx": 32480,
+"du/dt = c[0] * du/dx": 30922,
+"du/dt = c[0] * du/dx + c[1] * t * du/dx": 28086,
+"du/dt = c[0] * du/dx + c[1]": 28086,
+"du/dt = c[0] * du/dx + c[1] * t + c[2]": 27995,
+"du/dt = c[0] * du/dx + c[1] * t + c[2] * t * du/dx": 27995
+"du/dt = c[0] * du/dx + c[1] * t * du/dx + c[2] * x * du/dx": 1171,
+"du/dt = c[0] * t + c[1] * du/dx + c[2] * u + c[3] * x": 103.97,}}
 
 #/end of input data
 
@@ -40,4 +54,4 @@ def equation_v0(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict()
 
 """ The function to complete: """
 def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
-    """Your task is to generate code here with an example of the function given at equation_v0"""
+    """Generate the code"""

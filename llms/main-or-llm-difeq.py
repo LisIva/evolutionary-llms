@@ -8,7 +8,7 @@ from scipy.interpolate import RegularGridInterpolator
 np.set_printoptions(threshold=sys.maxsize)
 from data.models_desc import models
 import creds
-from promptconstructor.combine_txts import get_simple_prompt
+from promptconstructor.combine_txts import get_simple_burg_prompt, read_with_langchain
 
 # qwen/qwen-2-72b-instruct         0.14  / 1000 inp. symb. & 0.14  / 1000 out. symb.  32768 cont
 # qwen/qwen-2.5-72b-instruct       0.6   / 1000 inp. symb. & 0.6   / 1000 out. symb.  128000 cont
@@ -19,8 +19,12 @@ from promptconstructor.combine_txts import get_simple_prompt
 PARENT_PATH = Path().absolute().parent
 MODEL = "qwen/qwen-2-72b-instruct"
 
+
 # minimum для simple burgers ~14500 tokens
-# frac{du}{dt} = c[0] \cdot t + c[1] \cdot \frac{du}{dx} + c[2] \cdot u + c[3] \cdot x
+# To construct the function `equation_v1` that fits the data points and improves upon the previous attempts stored
+# in `exp_buffer`
+
+
 def info(prompt, response):
     def cost(prompt, response):
         return len(prompt) / 1000 * models[MODEL]["in_price"] + \
@@ -32,28 +36,31 @@ def info(prompt, response):
     print(f"Len(in_symbols): {len(prompt)}")
     print(f"Length of tokens, total: {response_big.usage.prompt_tokens + response_big.usage.completion_tokens}")
     print(f"Len(out_symbols): {len(response)}")
+    # num_comp_tokens = response_big.usage.prompt_tokens
+    # num_comp_tokens = response_big.usage.completion_tokens
 
 
 client = OpenAI(
     api_key=creds.api_key,
     base_url="https://api.vsegpt.ru/v1",
 )
-prompt = get_simple_prompt()
-messages = []
-messages.append({"role": "user", "content": prompt})
+prompt = read_with_langchain("points-set-prompt3.txt") # 2446 base len
+# prompt = get_simple_burg_prompt()
+messages = [{"role": "user", "content": prompt}]
 
 response_big = client.chat.completions.create(
     model=MODEL,
     messages=messages,
-    temperature=0.5,
+    temperature=1.0,
     n=1,
     max_tokens=1500, # максимальное число ВЫХОДНЫХ токенов
     extra_headers={ "X-Title": "My App"},
 )
 
 response = response_big.choices[0].message.content
-# num_comp_tokens = response_big.usage.prompt_tokens
-# num_comp_tokens = response_big.usage.completion_tokens
+
 print("Response:", response)
 
 info(prompt, response)
+with open("llm-output.txt", 'w') as model_out:
+    model_out.write(response)
