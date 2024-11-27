@@ -3,11 +3,10 @@ from langchain_core.prompts import PromptTemplate
 import numpy as np
 import sys
 from pathlib import Path
-np.set_printoptions(threshold=sys.maxsize)
-
 
 PARENT_PATH = Path().absolute().parent
-
+# right_side = params[0] * u * derivs_dict["du/dx"] + params[1] * derivs_dict["du/dx"]
+# string_form_of_the_equation = "du/dt = c[0] * du/dx + c[1] * u * du/dx"
 
 def read_simple_burg():
     abs_path = os.path.join(PARENT_PATH, "promptconstructor", "burg_txu_derivs.txt")

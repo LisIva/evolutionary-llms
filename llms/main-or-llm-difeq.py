@@ -18,7 +18,8 @@ from promptconstructor.combine_txts import get_simple_burg_prompt, read_with_lan
 
 PARENT_PATH = Path().absolute().parent
 MODEL = "qwen/qwen-2-72b-instruct"
-
+OUT_FOLDER = "pipeline"
+out_path = os.path.join(PARENT_PATH, OUT_FOLDER, "llm-output.txt")
 
 # minimum для simple burgers ~14500 tokens
 # To construct the function `equation_v1` that fits the data points and improves upon the previous attempts stored
@@ -62,5 +63,5 @@ response = response_big.choices[0].message.content
 print("Response:", response)
 
 info(prompt, response)
-with open("llm-output.txt", 'w') as model_out:
+with open(out_path, 'w', encoding="utf-8") as model_out:
     model_out.write(response)
