@@ -1,13 +1,7 @@
 from typing import Tuple, Any
-
 import numpy as np
 from scipy.optimize import minimize
-import os
 from promptconstructor.array_to_txt import load_resample_array
-import pandas as pd
-from pathlib import Path
-import re
-import cv2
 
 
 def loss_function(params, t, x, u, derivs_dict):
