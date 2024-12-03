@@ -24,11 +24,12 @@ def get_simple_burg_prompt():
     return head + data + tail
 
 
-def read_with_langchain(prompt_name, type='simple-burg', print_baselen=False):
+def read_with_langchain(prompt_name=None, type='simple-burg', print_baselen=False, path=None):
     if type=='simple-burg':
         data = read_simple_burg()
-        abs_path = os.path.join(PARENT_PATH, "prompts", "text-llms", prompt_name)
-        with open(abs_path, 'r') as myf:
+        if path is None:
+            path = os.path.join(PARENT_PATH, "prompts", "text-llms", prompt_name)
+        with open(path, 'r') as myf:
             prompt_raw = myf.read()
 
     prompt_template = PromptTemplate.from_template(prompt_raw)
