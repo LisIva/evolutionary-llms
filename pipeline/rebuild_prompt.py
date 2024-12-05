@@ -11,6 +11,15 @@ def extract_exp_buffer(path):
     return start_pos, end_pos, dict_str, content
 
 
+def is_duplicate(insert_eq_str, dict_str):
+    examine_eq_str = "\"" + insert_eq_str + "\""
+    groups = re.findall('(".*"): (.+),', dict_str)
+    for (eq_str, score_str) in groups:
+        if examine_eq_str == eq_str:
+            return True
+    return False
+
+
 def insert_equation(insert_eq_str, insert_val, dict_str):
     if len(dict_str) == 0:
         return '"' + insert_eq_str + '"' + ": " + str(insert_val) + ","
@@ -43,8 +52,11 @@ def create_new_buffer(start_pos, end_pos, new_dict_str, file_content, path, writ
     return new_buff_file
 
 
-def rebuild_prompt(insert_eq_str, value, path="simple_burg_prompts/continue-iter.txt"):
+def rebuild_prompt(insert_eq_str, value, path="simple_burg_prompts/continue-iter.txt", num=0):
     start_pos, end_pos, dict_str, file_content = extract_exp_buffer(path)
+    if is_duplicate(insert_eq_str, dict_str):
+        print(f'LLM generated a duplicate on iter #{num}')
+        return None, None
     new_dict_str = insert_equation(insert_eq_str, value, dict_str)
     new_file = create_new_buffer(start_pos, end_pos, new_dict_str, file_content, path, write_file=True)
     # new_file = create_new_buffer(start_pos, end_pos, new_dict_str, file_content, path)
@@ -56,4 +68,5 @@ if __name__ == "__main__":
     #  new_file = rebuild_prompt("du/dt = c[0] * t + c[1] * x", 2)
     #  new_file = rebuild_prompt("du/dt = c[0] * u + c[1] * t", 1)
     #  new_file = rebuild_prompt("du/dt = c[0] * u + c[1] * du/dx", 300)
+    # new_file = rebuild_prompt("du/dt = c[0] * u * du/dx + c[1] * t * du/dx", 1.65)
     print()

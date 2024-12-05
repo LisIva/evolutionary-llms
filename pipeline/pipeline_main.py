@@ -6,8 +6,9 @@ from tqdm import tqdm
 import sys
 
 
-MAX_ITER = 5
+MAX_ITER = 7
 DEBUG = True
+EXIT = False
 
 
 def step(path, num=0, debug=False):
@@ -17,18 +18,20 @@ def step(path, num=0, debug=False):
         else:
             response = get_response(prompt_path=path, num=num)
         score, str_equation, params = piped_evaluator(response)
-        new_prompt, old_prompt = rebuild_prompt(str_equation, score)
+        new_prompt, old_prompt = rebuild_prompt(str_equation, score, num=num)
 
     except Exception as e:
-        print(f"LLM generated an unacceptable response on iter #{num}:")
+        print(f"\nLLM generated an unacceptable response on iter #{num}:")
         if debug:
-            print(e)
-            sys.exit()
-        return old_prompt, None, None, None
+            print('Exception occured:', e, f'on iter#{num}\n')
+            if EXIT:
+                sys.exit()
+        return None, None, None, None
     return new_prompt, score, str_equation, params
 
 
-# TODO: проверять уникальность уравнений на этапе переписывания промпта?
+# LLM нашла бюргерса со второго раза, т к сначала предположила самую просутю зависимость: du/dt = k * du/dx
+# надо описать это в начальном промпте: LLM должна знать что сначала следует генерить простые случаи и затем нанизывать на них ноые слагаемые
 if __name__ == '__main__':
     # clean_output_dir()
     reset_prompt_to_init()

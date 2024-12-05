@@ -35,6 +35,7 @@ points_set =
 {points_set}
 exp_buffer = {{
 "du/dt = k * du/dx , k = c[0]": 30922,
+"du/dt = c[0] * du/dx + c[1] * t": 28595,
 "du/dt = c[0] * u * du/dx": 1.67,
 "du/dt = c[0] * u * du/dx + c[1] * t * du/dx": 1.65,
 "du/dt = c[0] * u * du/dx + c[1] * x * du/dx": 1.34,}}
