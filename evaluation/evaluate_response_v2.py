@@ -5,8 +5,11 @@ from promptconstructor.array_to_txt import load_resample_array
 
 
 def loss_function(params, t, x, u, derivs_dict):
+    lam = 0.01
+    l2 = lam * np.dot(params, params)
+    l1 = lam * np.sum(np.abs(params))
     u_pred = equation_v1(t, x, u, derivs_dict, params)[0]
-    return np.mean((u_pred-derivs_dict["du/dt"])**2)
+    return np.mean((u_pred-derivs_dict["du/dt"])**2) + l2
 
 
 def evaluate(data: dict) -> tuple[Any, Any]:
@@ -26,8 +29,13 @@ def evaluate(data: dict) -> tuple[Any, Any]:
 
 
 def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
-    right_side = params[0] * u * derivs_dict["du/dx"] + params[1] * derivs_dict["du/dx"]
-    string_form_of_the_equation = "du/dt = c[0] * du/dx + c[1] * u * du/dx"
+    # right_side = params[0] * u * derivs_dict["du/dx"] + params[1] * derivs_dict["du/dx"] # 1.64653
+    # right_side = params[0] * u * derivs_dict["du/dx"] + params[1]  # 1.59917
+    # right_side = params[0] * u * derivs_dict["du/dx"] # 1.67579
+    # right_side = params[0] * u * derivs_dict["du/dx"] + params[1] * t * derivs_dict["du/dx"] # 1.66
+    right_side = params[0] * u * derivs_dict["du/dx"] + params[1] * x * derivs_dict["du/dx"] # 1.351
+# "du/dt = c[0] * u * du/dx + c[1] * x * du/dx": 1.34
+    string_form_of_the_equation = ""
     return (right_side, string_form_of_the_equation)
 
 
