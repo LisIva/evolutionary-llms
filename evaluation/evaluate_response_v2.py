@@ -9,7 +9,7 @@ def loss_function(params, t, x, u, derivs_dict):
     l2 = lam * np.dot(params, params)
     l1 = lam * np.sum(np.abs(params))
     u_pred = equation_v1(t, x, u, derivs_dict, params)[0]
-    return np.mean((u_pred-derivs_dict["du/dt"])**2) + l2
+    return np.mean((u_pred-derivs_dict["du/dt"])**2)
 
 
 def evaluate(data: dict) -> tuple[Any, Any]:

@@ -3,6 +3,7 @@ import numpy as np
 from scipy.optimize import minimize
 from promptconstructor.array_to_txt import load_resample_array
 from extract_llm_equation import write_equation_v1_fun
+from sympy import Mul, Symbol, Pow
 
 
 def define_eq(response):

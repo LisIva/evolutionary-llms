@@ -6,6 +6,7 @@ Make sure the suggested equation is dependent on at least one derivative, so in 
 Requirements:
 1. First look at the exp_buffer and then suggest the equation, the string form of which is not already there!
 2. Do not copy the equations from the exp_buffer!
+3. Only give a simplified version of the equation in string_form_of_the_equation: always open the brackets, for ex. instead of 'du/dt = c[0] * (1 + du/dx) * t' return 'du/dt = c[0] * t + c[1] * du/dx * t'.
 
 import numpy as np
 from scipy.optimize import minimize
@@ -40,8 +41,8 @@ exp_buffer = {{
 
 """ An example of desired output: """
 def equation_v0(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
-    right_side = params[0] * x * derivs_dict["du/dx"]
-    string_form_of_the_equation = "du/dt = c[0] * x * du/dx"
+    right_side = params[0] * derivs_dict["du/dx"]
+    string_form_of_the_equation = "du/dt = c[0] * du/dx"
     len_of_params = 1
     return (right_side, string_form_of_the_equation, len_of_params)
 

@@ -1,0 +1,4 @@
+du/dt = c[0] * t * exp(-c[1] * du/dx)
+du/dt = -c[0] * (du/dx) - c[1] * t * x - c[2]
+du/dt = -c[0] * t - c[1] * du/dx
+string_form_of_the_equation = f"c[0] * du/dx + c[1] * t"
