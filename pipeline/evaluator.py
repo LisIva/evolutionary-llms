@@ -3,8 +3,9 @@ import numpy as np
 from scipy.optimize import minimize
 from promptconstructor.array_to_txt import load_resample_array
 from extract_llm_equation import write_equation_v1_fun
-from sympy import Mul, Symbol, Pow
+from solution_complexity import eval_complexity
 
+optimization_track = {}
 
 def define_eq(response):
     eq1_fun_text = write_equation_v1_fun(response)
@@ -47,7 +48,11 @@ def piped_evaluator(response):
 
     _, string_form_of_the_equation, P = equation_v1(*data['inputs'], data["derivs_dict"], np.zeros(100))
     score, params = evaluate(data, P)
-    return round_score(score), string_form_of_the_equation, params
-
-
-
+    rounded_score = round_score(score)
+    try:
+        complexity_score = eval_complexity(string_form_of_the_equation)
+    except Exception as e:
+        print(f"\nException while finding a complexity score")
+    total_score = round_score(np.sqrt(score*score + complexity_score*complexity_score))
+    optimization_track[string_form_of_the_equation] = (float(rounded_score), complexity_score)
+    return total_score, string_form_of_the_equation, params

@@ -1,7 +1,7 @@
 import re
 
 BASE_COMPLEX_VAL = 0.4
-BASE_DERIV_SCORE = 1.
+
 
 def split_by_second_sign(terms_ls, sign='-'):
     terms = []
@@ -10,12 +10,49 @@ def split_by_second_sign(terms_ls, sign='-'):
     return terms
 
 
+def glue_scattered(terms_ls):
+    terms = []
+    for i in range(len(terms_ls)-1):
+        if terms_ls[i].count('(') == 0 and i == 0:
+            terms.append(terms_ls[i])
+        else: pass
+
+
+def find_brace_idx(string):
+    brace_open, brace_close = [], []
+    for i in range(len(string)):
+        if string[i] == '(':
+            brace_open.append(i)
+        elif string[i] == ')':
+            brace_close.append(i)
+    return brace_open, brace_close
+
+
+def disassemble(string):
+    terms_scattered = string.split(" = ")[1].split("+") # список из 1 или многих элементов
+    terms_scattered1 = split_by_second_sign(terms_scattered)
+    # br = re.findall('\(.*\)', string)
+    terms = []
+    for term in terms_scattered:
+        if term.count('(') == 0:
+            pass
+
+
 def eval_fun(token):
     if token[:4] == 'du/d':
-        return BASE_DERIV_SCORE
+        return 1.
     elif token[:2] == 'd^':
-        return (int(token[2]) + 1) * BASE_DERIV_SCORE / 2
+        return (int(token[2]) + 1) * 0.5
     else: return BASE_COMPLEX_VAL
+
+
+s2 = 'du/dt = a * t * exp(-1 + t * du/dx) - b * t * du/dx'
+s3 = 'du/dt = -c[0] * (du/dx) - c[1] * t * x - c[2] * t + c[3]'
+s4 = "du/dt = -c[0] * t - c[1] * du/dx"
+s5 = f"du/dt = c[0] * du/dx + c[1] * t"
+br = re.findall('[a-z]*\(.*\)', "u * du/dx * exp(1 + log(5x + u)) + c[2] * (du/dx)")
+m6 = "du/dt = {c} * u * du/dx * exp(1 - log(5 * x + u)) + A[5] * (d^2u/dx^2) ^ 2 - {coeff} * t ^ 2 * u ^ 3"
+# c1, c2 = find_brace_idx(m6)
 
 
 def replace_pow(string):
@@ -28,16 +65,14 @@ def replace_pow(string):
     pow_idxs = sorted(pow_idxs, key=lambda x: x[0])
 
     # form a new string by replacing a pow of ^ with &
-    if len(pow_idxs) != 0:
-        new_str = [string[:pow_idxs[0][0]]]
-        for i in range(len(pow_idxs)):
-            new_str.append(string[pow_idxs[i][0]:pow_idxs[i][1]].replace('^', '&'))
-            if i != len(pow_idxs) - 1:
-                new_str.append(string[pow_idxs[i][1]:pow_idxs[i+1][0]])
-        new_str.append(string[pow_idxs[-1][1]:])
-        return ''.join(new_str)
+    new_str = [string[:pow_idxs[0][0]]]
+    for i in range(len(pow_idxs)):
+        new_str.append(string[pow_idxs[i][0]:pow_idxs[i][1]].replace('^', '&'))
+        if i != len(pow_idxs) - 1:
+            new_str.append(string[pow_idxs[i][1]:pow_idxs[i+1][0]])
+    new_str.append(string[pow_idxs[-1][1]:])
 
-    else: return string
+    return ''.join(new_str)
 
 
 def clean_split_raw(string):
@@ -88,10 +123,10 @@ def process_derivs(s_ls):
     for i, token in enumerate(s_ls):
         if len(token) >= 5:
             if token[:4] == 'du/d':
-                total_val += BASE_DERIV_SCORE
+                total_val += 1.
                 processed_ids.append(i)
             elif token[:2] == 'd^':
-                total_val += (int(token[2]) + 1) * BASE_DERIV_SCORE / 2
+                total_val += (int(token[2]) + 1) * 0.5
                 processed_ids.append(i)
     s_ls = remove_processed_ids(s_ls, processed_ids[::-1])
     return total_val, s_ls
@@ -106,14 +141,9 @@ def remove_garbage(s_ls):
     return s_ls
 
 
-def eval_complexity(string):
-    str_ls = clean_split_raw(string)
-    total_pow_val, str_ls = process_pow(str_ls)
-    total_deriv_val, str_ls = process_derivs(str_ls)
-    str_ls = remove_garbage(str_ls)
-    return BASE_COMPLEX_VAL * len(str_ls) + total_pow_val + total_deriv_val
-
-
-if __name__ == '__main__':
-
-    string = "du/dt = {c} * u * du/dx * exp(1 - log(5 * x + u)) + A[5] * (d^2u/dx^2) ^ 2 - {coeff} * t ^ 2 * u ^ 3"
+m6_ls = clean_split_raw(m6)
+total_pow_val, m6_ls = process_pow(m6_ls)
+total_deriv_val, m6_ls = process_derivs(m6_ls)
+m6_ls = remove_garbage(m6_ls)
+total_val = BASE_COMPLEX_VAL * len(m6_ls) + total_pow_val + total_deriv_val
+print()

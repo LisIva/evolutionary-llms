@@ -1,4 +1,4 @@
-from evaluator import piped_evaluator
+from evaluator import piped_evaluator, optimization_track
 from get_llm_response import get_response, get_debug_response
 from rebuild_prompt import rebuild_prompt
 from clean_directories import clean_output_dir, reset_prompt_to_init
@@ -6,10 +6,10 @@ from tqdm import tqdm
 import sys
 
 
-MAX_ITER = 3
-DEBUG = False # True
+MAX_ITER = 8
+DEBUG = True # True False
 PRINT_EXC = True
-EXIT = True
+EXIT = False
 
 
 def step(path, num=0, debug=False):
@@ -43,4 +43,5 @@ if __name__ == '__main__':
     new_prompt, score, str_equation, params = step("simple_burg_prompts/zero-iter.txt", 0, debug=DEBUG)
     for num in tqdm(range(1, MAX_ITER), desc="LLM's progress"):
         new_prompt, score, str_equation, params = step("simple_burg_prompts/continue-iter.txt", num, debug=DEBUG)
+    keys = list(optimization_track.values())
     print(str_equation)
