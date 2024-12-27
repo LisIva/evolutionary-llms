@@ -3,10 +3,19 @@ from langchain_core.prompts import PromptTemplate
 import numpy as np
 import sys
 from pathlib import Path
+from promptconstructor.info_prompts import prompt_complete_inf
 
 PARENT_PATH = Path().absolute().parent
 # right_side = params[0] * u * derivs_dict["du/dx"] + params[1] * derivs_dict["du/dx"]
 # string_form_of_the_equation = "du/dt = c[0] * du/dx + c[1] * u * du/dx"
+
+
+def read_eq_data(name):
+    abs_path = os.path.join(PARENT_PATH, "promptconstructor", f"{name}_txu_derivs.txt")
+    with open(abs_path, 'r') as myf:
+        data = myf.read()
+    return data
+
 
 def read_simple_burg():
     abs_path = os.path.join(PARENT_PATH, "promptconstructor", "burg_txu_derivs.txt")
@@ -24,22 +33,35 @@ def get_simple_burg_prompt():
     return head + data + tail
 
 
-def read_with_langchain(prompt_name=None, type='simple-burg', print_baselen=False, path=None):
-    if type=='simple-burg':
-        data = read_simple_burg()
-        if path is None:
-            path = os.path.join(PARENT_PATH, "prompts", "text-llms", prompt_name)
-        with open(path, 'r') as myf:
-            prompt_raw = myf.read()
+def read_with_langchain(dir_name='burg', path=None):
+    data = read_eq_data(dir_name)
+    with open(path, 'r') as myf:
+        prompt_raw = myf.read()
 
     prompt_template = PromptTemplate.from_template(prompt_raw)
-    prompt = prompt_template.format(points_set=data)
+    prompt = prompt_template.format(points_set=data,
+                                    dots_order=prompt_complete_inf[dir_name]['dots_order'],
+                                    left_deriv=prompt_complete_inf[dir_name]['left_deriv'],
+                                    full_form=prompt_complete_inf[dir_name]['full_form'],)
+    return prompt
 
-    if print_baselen:
-        print("Len of prompt without input data:", len(prompt)-len(data))
+
+def test_read_with_langchain(prompt_name="points-set-prompt3.txt", dir_name='burg'):
+    data = read_eq_data(dir_name)
+    # path = os.path.join(PARENT_PATH, "prompts", "text-llms", prompt_name)
+    path = 'reset-for-continue.txt'
+    with open(path, 'r') as myf:
+        prompt_raw = myf.read()
+
+    prompt_template = PromptTemplate.from_template(prompt_raw)
+    prompt = prompt_template.format(points_set=data,
+                                    dots_order=prompt_complete_inf[dir_name]['dots_order'],
+                                    left_deriv=prompt_complete_inf[dir_name]['left_deriv'],
+                                    full_form=prompt_complete_inf[dir_name]['full_form'],)
     return prompt
 
 
 if __name__ == "__main__":
-    prompt = read_with_langchain("points-set-prompt3.txt", print_baselen=True)
+    # prompt = test_read_with_langchain()
+    prompt1 = test_read_with_langchain(dir_name='wave')
     print()

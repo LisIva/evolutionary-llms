@@ -3,8 +3,8 @@ def find_positions(response=None, path: str = 'llm-output.txt', encoding: str = 
         with open(path, 'r', encoding=encoding) as myf:
             response = myf.read()
 
-    begin_pos = response.find("def equation_v1(")
-    end_pos = response.find("return (")
+    begin_pos = response.rfind("def equation_v1(")
+    end_pos = response[begin_pos:].find("return (") + begin_pos
     return begin_pos, end_pos, response
 
 

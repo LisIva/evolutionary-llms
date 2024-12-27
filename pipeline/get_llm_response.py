@@ -26,11 +26,11 @@ def get_debug_response(num=0):
     return data
 
 
-def get_response(prompt_path="simple_burg_prompts/continue-iter.txt", num=0, print_info=False):
+def get_response(prompt_path="prompts/continue-iter.txt", num=0, dir_name='burg', print_info=False):
     client = OpenAI(
         api_key=creds.api_key, base_url="https://api.vsegpt.ru/v1")
 
-    prompt = read_with_langchain(path=prompt_path) # 2446 base len
+    prompt = read_with_langchain(path=prompt_path, dir_name=dir_name) # 2446 base len
     messages = [{"role": "user", "content": prompt}]
     response_big = client.chat.completions.create(
         model=MODEL,

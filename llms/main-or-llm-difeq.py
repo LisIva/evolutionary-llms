@@ -8,7 +8,7 @@ from scipy.interpolate import RegularGridInterpolator
 np.set_printoptions(threshold=sys.maxsize)
 from data.models_desc import models
 import creds
-from promptconstructor.combine_txts import get_simple_burg_prompt, read_with_langchain
+from promptconstructor.combine_txts import get_simple_burg_prompt, test_read_with_langchain
 
 # qwen/qwen-2-72b-instruct         0.14  / 1000 inp. symb. & 0.14  / 1000 out. symb.  32768 cont
 # qwen/qwen-2.5-72b-instruct       0.6   / 1000 inp. symb. & 0.6   / 1000 out. symb.  128000 cont
@@ -45,7 +45,7 @@ client = OpenAI(
     api_key=creds.api_key,
     base_url="https://api.vsegpt.ru/v1",
 )
-prompt = read_with_langchain("points-set-prompt3.txt") # 2446 base len
+prompt = test_read_with_langchain("points-set-prompt3.txt") # 2446 base len
 # prompt = get_simple_burg_prompt()
 messages = [{"role": "user", "content": prompt}]
 

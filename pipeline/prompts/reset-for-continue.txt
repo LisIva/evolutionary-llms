@@ -1,0 +1,51 @@
+What is a possible function with the general equation form {full_form} that could be described with the set of points named points_set, that have the form of '{dots_order}'. Give an answer in the function equation_v1 constructing it in a way described by equation_v0.
+The dictionary exp_buffer stores previous attempts to find the equation evaluated with evaluate function. While generating equation_v1 look at the exp_buffer and use the scores presented there to make a new guess about the equation structure. The best score is 0.
+Note that although the general equation form is {full_form}, the resulting equation may take on simpler forms, like {left_deriv} = F(t, du/dx).
+Make sure the suggested equation is dependent on at least one derivative, so in the provided case du/dx must be included.
+
+Requirements:
+1. First look at the exp_buffer and then suggest the equation, the string form of which is not already there!
+2. Do not copy the equations from the exp_buffer!
+3. Only give a simplified version of the equation in string_form_of_the_equation: always open the brackets, for ex. instead of 'du/dt = c[0] * (1 + du/dx) * t' return 'du/dt = c[0] * t + c[1] * du/dx * t'.
+
+import numpy as np
+from scipy.optimize import minimize
+
+def loss_function(params, t, x, u, derivs_dict):
+    u_pred = equation_v1(t, x, u, derivs_dict, params)[0]
+    return np.mean((u_pred-derivs_dict["{left_deriv}"])**2)
+
+def evaluate(data: dict) -> float:
+    """ Evaluate the constructed equation"""
+    inputs, derivs_dict = data['inputs'], data["derivs_dict"]
+
+    # Optimize equation skeleton parameters
+    loss_partial = lambda params: loss_function(params, *inputs, derivs_dict)
+    params_initial_guess = np.array([1.0]*P)
+    result = minimize(loss_partial, params_initial_guess, method='BFGS')
+    optimized_params = result.x
+
+    # Return evaluation score
+    score = loss_function(optimized_params, *inputs, derivs_dict)
+    return score if not np.isnan(score) and not np.isinf(score) else None
+
+
+#/Input data
+
+points_set =
+{points_set}
+exp_buffer = {{
+}}
+
+#/end of input data
+
+""" An example of desired output: """
+def equation_v0(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    right_side = params[0] * derivs_dict["du/dx"]
+    string_form_of_the_equation = "{left_deriv} = c[0] * du/dx"
+    len_of_params = 1
+    return (right_side, string_form_of_the_equation, len_of_params)
+
+""" The function to complete: """
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    """Generate the code"""

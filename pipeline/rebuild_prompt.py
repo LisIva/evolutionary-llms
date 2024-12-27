@@ -52,7 +52,7 @@ def create_new_buffer(start_pos, end_pos, new_dict_str, file_content, path, writ
     return new_buff_file
 
 
-def rebuild_prompt(insert_eq_str, value, path="simple_burg_prompts/continue-iter.txt", num=0):
+def rebuild_prompt(insert_eq_str, value, path="prompts/continue-iter.txt", num=0):
     start_pos, end_pos, dict_str, file_content = extract_exp_buffer(path)
     if is_duplicate(insert_eq_str, dict_str):
         print(f'LLM generated a duplicate on iter #{num}')

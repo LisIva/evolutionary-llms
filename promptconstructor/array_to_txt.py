@@ -7,20 +7,119 @@ np.set_printoptions(threshold=sys.maxsize)
 
 
 PARENT_PATH = Path().absolute().parent
+# дописать write_file для class Data
 
 
-def load_resample_array(name="u", shape=(20,20)):
+class Data(object):
+    def __init__(self, dir_name, resample_shape=(20, 20)):
+        self.dir_name = dir_name
+        self.dir_path = os.path.join(PARENT_PATH, "data", "raw_derivs", dir_name)
+        self.bounds = self.define_bounds(dir_name)
+        self.raw_data, self.eval_data = self.load_raw()
+        self.resampled_data = self.resample_data(resample_shape)
+
+    def define_bounds(self, dir_name):
+        if dir_name == 'burg': return ((0, 1), (-1000, 0))
+        elif dir_name == 'wave': return ((0, 1), (0, 1))
+        else:
+            t = np.load(os.path.join(self.dir_path, "t.npy"))
+            x = np.load(os.path.join(self.dir_path, "x.npy"))
+            return ((np.min(t), np.max(t)), (np.min(x), np.max(x)))
+
+    def load_raw(self):
+        files = [file for file in os.listdir(self.dir_path) if file.endswith(".npy")]
+        keys = []
+        for file in files:
+            key = file[:-4]
+            for replaceable in (("x1", "t"), ("x2", "x"), ("_", "/")):
+                key = key.replace(*replaceable)
+            keys.append(key)
+
+        raw_data = {}
+        for i, file in enumerate(files):
+            raw_data[keys[i]] = np.load(os.path.join(self.dir_path, file))
+
+        if self.bounds is not None:
+            t = np.linspace(self.bounds[0][0], self.bounds[0][1], raw_data['u'].shape[0])
+            x = np.linspace(self.bounds[1][0], self.bounds[1][1], raw_data['u'].shape[1])
+            grids = np.meshgrid(t, x, indexing='ij')
+            raw_data['t'], raw_data['x'] = grids[0], grids[1]
+
+        eval_data = {"inputs": [raw_data['t'], raw_data['x'], raw_data['u']]}
+        derivs_dict = {}
+        for key in list(raw_data.keys()):
+            if key[0] == 'd':
+                derivs_dict[key] = raw_data[key]
+        eval_data['derivs_dict'] = derivs_dict
+        return raw_data, eval_data
+
+    def resample_data(self, shape):
+        ti, xi = np.linspace(self.bounds[0][0], self.bounds[0][1], shape[0]), \
+                 np.linspace(self.bounds[1][0], self.bounds[1][1], shape[1])
+        grids_i = np.meshgrid(ti, xi, indexing='ij')
+        test_points = np.array([grids_i[0].ravel(), grids_i[1].ravel()]).T
+        interp_4u = RegularGridInterpolator([self.raw_data['t'][:, 0].ravel(), self.raw_data['x'][0, :]],
+                                            self.raw_data['u'])
+        u_res = interp_4u(test_points, method='linear').reshape(shape[0], shape[1])
+        # resampled_data = {"inputs": [grids_i[0], grids_i[1], u_res]}
+        resampled_for_truncation = {'t': grids_i[0].ravel(), 'x': grids_i[1].ravel(), 'u': u_res.ravel()}
+
+        derivs_dict = {}
+        for item in self.raw_data.items():
+            if item[0][0] == 'd':
+                interp = RegularGridInterpolator([self.raw_data['t'][:, 0].ravel(), self.raw_data['x'][0, :]],
+                                            item[1])
+                deriv_res = interp(test_points, method='linear').reshape(shape[0], shape[1])
+                derivs_dict[item[0]] = deriv_res
+                resampled_for_truncation[item[0]] = deriv_res.ravel()
+        # resampled_data['derivs_dict'] = derivs_dict
+        return resampled_for_truncation
+
+    def write_resampled_data(self):
+        file_name = f'{self.dir_name}_txu_derivs.txt'
+        rounded_ls, names_data = self.round()
+        with open(file_name, 'w') as myf:
+            for aij in zip(*rounded_ls):
+                line_ls = [f"{aij[k]}" for k in range(len(aij))]
+                line = ' '.join(line_ls) + '\n'
+                myf.write(line)
+        # with open(file_name, 'w') as myf:
+        #     for ti, xi, ui, u_ti, u_xi in zip(*rounded_ls):
+                # myf.write(f'{ti} {xi} {ui} {u_ti} {u_xi}\n')
+
+    def round(self):
+        rounded_ls, names = [], []
+        for item in self.resampled_data.items():
+            arr = list(item[1])
+            for i, el in enumerate(arr):
+                if abs(el) > 100.:
+                    arr[i] = np.round(el, 1)
+                elif abs(el) > 10.:
+                    arr[i] = np.round(el, 1)
+                elif abs(el) > 1.:
+                    arr[i] = np.round(el, 2)
+                elif abs(el) > 0.0000001:
+                    down_pow = int(np.abs(np.floor(np.log10(np.abs(el)))))
+                    arr[i] = np.round(el, down_pow + 1)
+                else: arr[i] = 0
+            rounded_ls.append(arr)
+            names.append(item[0])
+        return rounded_ls, names
+
+
+def load_resample_burg_array(name="u", shape=(20,20)):
     path = os.path.join(PARENT_PATH, "data", "simple_burg", f"{name}.npy")
     u = np.load(path)
 
     x, t = np.linspace(-1000, 0, 101), np.linspace(0, 1, 101)
+
     xi, ti = np.linspace(-1000, 0, shape[1]), np.linspace(0, 1, shape[0])
     grids = np.meshgrid(ti, xi, indexing='ij')
     test_points = np.array([grids[0].ravel(), grids[1].ravel()]).T
 
     interp = RegularGridInterpolator([t, x], u)
     u_res = interp(test_points, method='linear').reshape(shape[0], shape[1])
-    return u_res,ti,xi
+    return u_res,ti,xi, u
 
 
 def write_file(t, x, u, u_t, u_x, show_symnum=False):
@@ -47,18 +146,33 @@ def local_round(t, x, u, u_t, u_x):
 
 
 def get_simple_burg_data():
-    u, t, x = load_resample_array()
-    u_t, _, _ = load_resample_array("du_dx0")
-    u_x, _, _ = load_resample_array("du_dx1")
+    u, t, x = load_resample_burg_array()
+    u_t, _, _ = load_resample_burg_array("du_dx0")
+    u_x, _, _ = load_resample_burg_array("du_dx1")
     t, x, u, u_t, u_x = local_round(t, x, u, u_t, u_x)
     write_file(t, x, u, u_t, u_x)
 
 
 if __name__ == "__main__":
-    u, t, x = load_resample_array()
-    u_t, _, _ = load_resample_array("du_dx0")
-    u_x, _, _ = load_resample_array("du_dx1")
-    t, x, u, u_t, u_x = local_round(t, x, u, u_t, u_x)
-    write_file(t, x, u, u_t, u_x, show_symnum=True)
+    u, t, x, u_f = load_resample_burg_array()
+    u_t, _, _, u_t_f = load_resample_burg_array("du_dx0")
+    u_x, _, _, u_x_f  = load_resample_burg_array("du_dx1")
+
+    data_burg = Data('burg')
+    # data_burg.write_resampled_data()
+    data_burg_s = Data('sindy-burg')
+    data_burg_s.write_resampled_data()
+
+    data_burg_kdv = Data('kdv')
+    # data_burg_kdv.write_resampled_data()
+
+    data_burg_kdv_s = Data('sindy-kdv')
+    # data_burg_kdv_s.write_resampled_data()
+
+    data_wave = Data('wave')
+    # data_wave.write_resampled_data()
+    print()
+    # t, x, u, u_t, u_x = local_round(t, x, u, u_t, u_x)
+    # write_file(t, x, u, u_t, u_x, show_symnum=True)
     print()
 
