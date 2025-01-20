@@ -1,7 +1,8 @@
 import re
 
-BASE_COMPLEX_VAL = 0.4
-BASE_DERIV_SCORE = 1.
+BASE_COMPLEX_VAL = 0.2
+BASE_DERIV_SCORE = 0.5
+
 
 def split_by_second_sign(terms_ls, sign='-'):
     terms = []
@@ -41,7 +42,7 @@ def replace_pow(string):
 
 
 def clean_split_raw(string):
-    string = string[8:]
+    string = string[string.find('=')+2:]
     string = string.replace(' ', '')
     string = replace_pow(string)
 
@@ -65,12 +66,18 @@ def process_pow(s_ls5):
     processed_idxs = []
     total_pow_val = 0.
     for i, j in terms_with_pow_idx:
-        if j == 0:
-            total_pow_val += eval_fun(s_ls5[i - 1]) * int(s_ls5[i][1:])
+        if j == 0: # '&' has idx = 0 and that means that i-1 is a complex term
+            if re.match('^[0-9]+$', s_ls5[i][1:]) is not None:
+                total_pow_val += eval_fun(s_ls5[i - 1]) * int(s_ls5[i][1:])
+            else:
+                total_pow_val += eval_fun(s_ls5[i - 1]) * 2.5
             processed_idxs += [i - 1, i]
         else:
             token, t_pow = s_ls5[i].split('&')
-            total_pow_val += eval_fun(token) * int(t_pow)
+            if t_pow == '':
+                total_pow_val += eval_fun(token) * 2.5
+            else:
+                total_pow_val += eval_fun(token) * int(t_pow)
             processed_idxs.append(i)
     s_ls5 = remove_processed_ids(s_ls5, processed_idxs[::-1])
     return total_pow_val, s_ls5
@@ -115,5 +122,9 @@ def eval_complexity(string):
 
 
 if __name__ == '__main__':
-
+    # hhhh = re.match('^[0-9]+$', '5241t')
     string = "du/dt = {c} * u * du/dx * exp(1 - log(5 * x + u)) + A[5] * (d^2u/dx^2) ^ 2 - {coeff} * t ^ 2 * u ^ 3"
+    string_form_of_the_equation = "du/dt = c[0] * (du/dx)^3 + c[1] * (du/dx)^2 " + \
+                              "+ c[2] * t * (u^2) * du/dx + c[3] * u * du/dx"
+    print(len(string_form_of_the_equation))
+    print()

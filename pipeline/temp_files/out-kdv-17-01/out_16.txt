@@ -1,0 +1,13 @@
+To create the equation_v1, it's fair to consider the scores of existing equations in exp_buffer. The best score we see here is 1.0, which corresponds to the equation "du/dt = c[0] * du/dx". It seems that the primary variable affecting the change of "u" over time is "du/dx". Hence, we might include a multiplicative factor that is a function of "t" or "x". Since "du/dt" is essentially the rate of change of "u" over time, it makes sense to include both time "t" and spatial derivative "du/dx" in the equation. We aim to capture a new structure of the function that wasn't explored before in exp_buffer.
+
+Taking these points into consideration, the following function is proposed:
+
+```python
+def equation_v1(t, x, u, derivs_dict, params):
+    right_side = params[0] * derivs_dict["du/dx"] * t + params[1] * params[2]*x * derivs_dict["du/dx"]
+    string_form_of_the_equation = "du/dt = c[0] * t * du/dx + c[1] * c[2]*x * du/dx"
+    len_of_params = 3
+    return right_side, string_form_of_the_equation, len_of_params
+``` 
+
+This formulation suggests that the rate of change of variable "u" at a certain "x-position" and time "t", is proportional to both the local derivative (du/dx) and the location "x" at that point in time "t". So, it includes the multiplicative factors of "t" and "x". It's worth noting that the coefficients 'c[2]' and 'c[1]' are multiplied together, which is a new structure not yet seen in the exp_buffer. This structure allows us to check the interaction between "du/dx" and "x", which was not thoroughly explored in previous equations. This proposed equation seems to represent the physics of our problem, as "du/dt" should be proportional to "du/dx" and "x" at given "t". The coefficients 'c[0]' and 'c[1]' will allow for scaling and the 'c[2]' will account for the interaction between 'c[1]' and 'x'. This form is consistent with the requirements of the problem which ask that the equation must be dependent on "du/dx" (the spatial derivative).

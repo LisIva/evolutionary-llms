@@ -1,0 +1,23 @@
+Based on the given points set, there seems to be a correlation between du/dt and du/dx at different time points. The simplified correlation we assumed here is du/dt = k [du/dx].
+
+We can introduce here a linear function to explain the existing relationship, that is, du/dt = c[0] * du/dx + c[1], which extends the initial concept provided in `equation_v0()` with an extra constant term. Let's implement the function `equation_v1()`, define the equation form, and return the right hand side of the equation, and the string form for easy visualization and understanding. 
+
+Also note that the 'P' value in 'loss_function()' represents the number of parameters in the equation, which, based on our equation form, should be 2 ('c[0]' and 'c[1]').
+
+Here is the `equation_v1()` function:
+
+```python
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    right_side = params[0] * derivs_dict["du/dx"] + params[1]
+    string_form_of_the_equation = "du/dt = c[0] * du/dx + c[1]"
+    len_of_params = 2
+    return right_side, string_form_of_the_equation, len_of_params
+```
+In your current code, modify the number of parameters in 'params_initial_guess' array as follows:
+
+```python
+params_initial_guess = np.array([1.0]*2)
+```
+This ensures the optimization routine `minimize()` has the necessary degree of freedom to adjust 2 parameters in `equation_v1()`. The actual parameters' values will be adjusted in the optimization process to minimize the average squared error between the predicted derivative (from `equation_v1()`) and the actual one in the `points_set`.
+
+This way the function `equation_v1()` assumes a linear relation between du/dt and du/dx, which is of the form: du/dt = c[0]du/dx + c[1]. It may not perfectly capture all details in the data but provides a fairly good approximation with a simple structure. This structure can be extended to higher order non-linear functions incorporating other derivatives as well (du/dx, d2u/dx2, d3u/dx3) if the complexity of the data increases.

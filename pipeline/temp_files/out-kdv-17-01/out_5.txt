@@ -1,0 +1,15 @@
+To generate the code, I will create an equation form that has not been seen in the exp_buffer and still depends on at least one derivative. Since most of the equations in exp_buffer involve combinations of t, du/dx, and u, I will propose an equation form that also involves 'd^2u/dx^2' (the second derivative of u with respect to x). Here is the function corresponding to the equation du/dt = c[0] * du/dx + c[1] * d^2u/dx^2 + c[2] * u.
+
+```python
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    right_side = derivs_dict["du/dx"]*params[0] + derivs_dict["d^2u/dx^2"]*params[1] + u*params[2]
+    string_form_of_the_equation = "du/dt = c[0]*du/dx + c[1]*d^2u/dx^2 + c[2]*u"
+    len_of_params = 3
+    return right_side, string_form_of_the_equation, len_of_params
+```
+
+This function takes arrays t, x, u, and a dictionary derivs_dict. derivs_dict should contain keys for the derivatives we are interested in. The function also takes a params array which will be the coefficients for our suggested equation form. The function returns the right side of the equation, the equation's string form, and the number of parameters.
+
+Please note that the derivatives, du/dx and d^2u/dx^2, should be pre-computed and available in derivs_dict. The function assumes that the derivatives were already obtained and saved in derivs_dict. If they haven't been calculated before, you will need to add code to compute them before you can call this function. 
+
+To ensure the function is not repeating a previously attempted equation form, compare the `string_form_of_the_equation` to the keys of the `exp_buffer` dictionary. If the equation form hasn't been seen before, determine its evaluation score using the `evaluate` function provided in the input. This will determine if the new form is an improvement over past attempts.

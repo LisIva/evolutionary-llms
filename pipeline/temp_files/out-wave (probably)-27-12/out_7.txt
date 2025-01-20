@@ -1,0 +1,22 @@
+To create the `equation_v1` function, consider the previous attempts to find the correct equation form stored in `exp_buffer`. The equation should yield the least score and it should not be the same as the ones already tried. After considering all previous attempts, it seems like including terms depending on `du/dx` and `t` could create a good representation of the data. So, a possible equation to try next could be `d^2u/dt^2 = c[0] * du/dx + c[1] * t ** 2`.
+
+```python
+#inside the function
+right_side = params[0] * derivs_dict["du/dx"] + params[1] * t ** 2
+string_form_of_the_equation = "d^2u/dt^2 = c[0] * du/dx + c[1] * t ** 2"
+len_of_params = 2
+return (right_side, string_form_of_the_equation, len_of_params)
+```
+
+Therefore, the complete function `equation_v1` will be:
+
+```python
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    """Generate the code"""
+    right_side = params[0] * derivs_dict["du/dx"] + params[1] * t ** 2
+    string_form_of_the_equation = "d^2u/dt^2 = c[0] * du/dx + c[1] * t ** 2"
+    len_of_params = 2
+    return (right_side, string_form_of_the_equation, len_of_params)
+```
+
+Remember that the equation `d^2u/dt^2 = c[0] * du/dx + c[1] * t ** 2` was created by observing and analyzing the `points_set` and the `exp_buffer` data. The exact form of the equation might differ for another set of data points or another problem. This is just one possible solution among many for the provided data. Using another form of the equation might yield a better score, i.e., better fit to the provided data, so feel free to try different approaches.

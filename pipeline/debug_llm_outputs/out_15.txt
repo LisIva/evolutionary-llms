@@ -1,0 +1,9 @@
+Based on the data points and avoiding the already used structures from the exp_buffer, an appropriate equation might be:
+du/dt = c[0] * t * du/dx + c[1] * u * d^3u/dx^3
+
+Let's codify it.
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    right_side = params[0] * t * derivs_dict["du/dx"] + params[1] * u * derivs_dict["d^3u/dx^3"]
+    string_form_of_the_equation = "du/dt = c[0] * t * du/dx + c[1] * u * d^3u/dx^3"
+    len_of_params = 2
+    return right_side, string_form_of_the_equation, len_of_params

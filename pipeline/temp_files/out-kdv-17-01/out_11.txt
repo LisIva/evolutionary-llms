@@ -1,0 +1,15 @@
+Based on the definition provided for `equation_v0`, and looking at `exp_buffer`, we can propose a new equation structure that is not already present in the buffer. Our goal is to reduce the score (i.e. error). Since the best score recorded so far is 1.0, we should go for a structure different from those already tried while keeping the derivative `du/dx` as one of the terms.
+
+We can suggest a new equation where `du/dt` is dependent on the derivative `du/dx` along with `t` and `x`. After looking at previous attempts in `exp_buffer` I can see that none of them tried an equation including `t`, `x` and `du/dx` in the first order terms. Thus let's propose a new equation:
+
+`du/dt = c[0] * t + c[1] * x + c[2] * du/dx`.
+
+So `equation_v1` to return is:
+
+```python
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    right_side = params[0] * t + params[1] * x + params[2] * derivs_dict["du/dx"]
+    string_form_of_the_equation = "du/dt = c[0] * t + c[1] * x + c[2] * du/dx"
+    len_of_params = 3
+    return right_side, string_form_of_the_equation, len_of_params
+```

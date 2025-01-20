@@ -1,0 +1,21 @@
+Given the points set and the specifics of the exp_buffer, as well as the requirements to create a simplified version of the equation, which is not a copy of any equation in the exp_buffer and has not been evaluated yet, let's construct an equation that is based on those indicators that have been shown to perform relatively well in the exp_buffer. Among others the best scores are for equations that involve terms for $u$, $t$, $du/dx$, and constant terms, with the coefficients. One of the best essays for us is `du/dt = c[0] * du/dx + c[1]`. As an improvement to this, let's try to compare with a more complex expression including `du/dx` and other variables of the system important for the solution, like `t` and `du/dx^2`. 
+
+We already know from the exp_buffer that `c[0]*du/dx', `c[0] * t * du/dx`, `c[0] * du/dx**2` have performed well so let's explore equation with these terms and compare to the previously explored equations. Taking into account that in our data `t` is the slowest changing variable, it should have some influence to the `du/dt` especially in the bigger values of `du/dx`. Moreover, the `du/dx^2` term represents a change rate of `du/dx`, making it crucial in the equation structure. Note that this equation does not have the lowest score in exp_buffer, and its guess is different from the existing ones because it takes into account the evaluation results that have been made before.
+
+Thus, a possible function would be: `du/dt = c[0]*du/dx + c[1]*t*du/dx + c[2]*(d^2u/dx^2)` .
+
+Let's implement it in the function equation_v1:
+
+```python
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    right_side = params[0] * derivs_dict["du/dx"] + params[1] * t * derivs_dict["du/dx"] + params[2] * derivs_dict["d^2u/dx^2"]
+    string_form_of_the_equation = "du/dt = c[0] * du/dx + c[1] * t * du/dx + c[2] * (d^2u/dx^2)"
+    len_of_params = 3
+    return right_side, string_form_of_the_equation, len_of_params
+```
+This function calculates the value of du/dt using the given equation and returns it alongside the string representation of the equation. Note that the text 'right_side' contains the mathematical expression for du/dt corresponding to the given equation with specific parameters and derivatives. The string 'string_form_of_the_equation' provides the verbal description of the equation, which is the mathematical expression corresponding to the solution to the partial derivative equation, rewritten in the form of text. And the 'len_of_params' is the number of free parameters in the solution, which is equal to 3 since there are 3 constants(c[0], c[1], c[2]) in the equation.
+
+So, equation_v1 with the "du/dt = c[0]*du/dx + c[1]*t*du/dx + c[2]*(d^2u/dx^2)" can be a possible function that describes the phenomenon behind the points set. This function leveraged the insights from the exp_buffer which showed the best equation candidates but then branched out introducing the term "d^2u/dx^2" which wasn't present in the previous candidates to improve the model and cover additional dimension of data dynamics.
+
+The equation expresses the rate of change in $u$ over time, $du/dt$, as a function of the initial derivative, in accordance with the condition that the equation must include at least one derivative term. This derivative term is $du/dx$, as seen in the first and second terms of the equation.
+Within this equation du/dt is expressed as the addition of a linear term (c[0]*du/dx), where c[0] is a constant and du/dx is the initial derivative of the system that we are trying to analyse, a term that is proportional to the temporal derivative (c[1]*t*du/dx) and a term that adds non-linearity (c[2]*(d^2u/dx^2)). In this way, the proposed equation_v1 includes a combination of both linear and non-linear effects, as well as the dependency on the derivative as required.

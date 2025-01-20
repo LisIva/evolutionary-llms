@@ -1,15 +1,21 @@
-Based on the provided data points and the experimental buffer, it seems that the most used terms so far involve \( du/dx \). Given that we need to construct a function that heavily relies on a derivative and is not a simple copy of what we already have, let’s try to construct something in this form:
+After analyzing the data and the `exp_buffer`, we can observe that none of the previous equations managed to achieve a score close to zero, indicating that none of these equations perfectly fit the data. However, we can take inspiration from those equations to create a new one, while avoiding direct copying and ensuring that our new equation is dependent on at least one derivative.
 
-\[ d^2u/dt^2 = c[0] * du/dx + c[1] * u * du/dx + c[2] * t * (du/dx)^2 \]
+Given that the equation must depend on at least one derivative (for example, `du/dx`), and observing that the most successful score so far is from the equation "du/dt = c[0] * du/dx", we can add complexity to this by involving other variables and derivatives. Some equations in `exp_buffer` involve `d^2u/dx^2` and `u`. These equations have decent scores, suggesting that these variables could play a role in the underlying system.
 
-This equation includes the derivative \( du/dx \), the variable \( u \), the variable \( t \), and the square of \( du/dx \). Importantly, this equation is not in the form of any previously evaluated equations in the experimental buffer.
-
-Let's implement this suggested equation in the python code:
+Let's create a new equation that reflects this observation. This new equation will include `du/dx`, `u`, and `d^2u/dx^2`.
 
 ```python
 def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
-    right_side = params[0] * derivs_dict["du/dx"] + params[1] * u * derivs_dict["du/dx"] + params[2] * t * (derivs_dict["du/dx"])**2
-    string_form_of_the_equation = "d^2u/dt^2 = c[0] * du/dx + c[1] * u * du/dx + c[2] * t * (du/dx)**2"
+    right_side = params[0] * derivs_dict["du/dx"] + params[1] * u + params[2] * derivs_dict["d^2u/dx^2"]
+    string_form_of_the_equation = f"du/dt = {params[0]} * du/dx + {params[1]} * u + {params[2]} * d^2u/dx^2"
     len_of_params = 3
-    return (right_side, string_form_of_the_equation, len_of_params)
+    return right_side, string_form_of_the_equation, len_of_params
 ```
+
+In this equation, `params[0]`, `params[1]`, and `params[2]` are coefficients to be determined during the optimization process by minimizing the loss between the predicted `du/dt` and the actual `du/dt` in the data.
+
+Let's recap the function:
+
+1. The right side of the equation is composed of the product of the coefficient `params[0]` and `du/dx`, the product of the coefficient `params[1]` and `u`, and the product of the coefficient `params[2]` and `d^2u/dx^2`.
+2. The string form of the equation provides a simple expression of how `du/dt` is calculated according to the given input variables and their derivatives.
+3. It returns the right side of the equation calculated using the provided input along with the string form of the equation and the number of parameters, to help with further processing such as fitting or scoring.

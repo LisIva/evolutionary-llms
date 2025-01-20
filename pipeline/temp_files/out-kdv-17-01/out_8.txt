@@ -1,0 +1,12 @@
+Based on the exploration of the `exp_buffer`, we could try a different variation of an equation structure which already wasn't attempted. For example, an equation of the form:
+du/dt = c[0] * t * du/dx ** 2 + c[1] * u * x + c[2] * du/dx
+
+Notice that such a structure is different from all tried ones, but keeps the requirement of being dependent on at least one derivative.
+
+Here is implementation for the guessed equation:
+
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    right_side = params[0] * t * derivs_dict["du/dx"] ** 2 + params[1] * u * x + params[2] * derivs_dict["du/dx"]
+    string_form_of_the_equation = "du/dt = c[0] * t * (du/dx)^2 + c[1] * u * x + c[2] * du/dx"
+    len_of_params = 3
+    return right_side, string_form_of_the_equation, len_of_params

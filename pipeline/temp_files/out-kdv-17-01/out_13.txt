@@ -1,0 +1,13 @@
+To construct a new equation based on the given data provided in points_set and nuances brought into consideration from the exp_buffer, we should aim for an equation structure to which the data best conveys itself, whilst avoiding duplicating any of the structures already seen in exp_buffer. Purposefully guessing, and taking into account that there should be dependency on at least one derivative, I'll draft a new equation:
+
+Consider a structure that might deal somewhat differently with time dependency, space dependency, and the derivative. It could be similar to structures in exp_buffer but clearly different. 
+
+For example, the proposed structure is: du/dt = c[0] * t * du/dx + c[1] * t * du/dx^3 + c[2] * x * du/dx + c[3] * (du/dx)^2. This equation includes the derivative 'du/dx', 't', 'x', the derivative cubed 'du/dx^3' and the derivative squared '(du/dx)^2', expanding on what we have seen in the exp_buffer but avoiding direct duplication. Here are for the simplified string form and the equivalent function:
+
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    right_side = params[0] * t * derivs_dict["du/dx"] + params[1] * t * (derivs_dict["du/dx"] ** 3) + params[2] * x * derivs_dict["du/dx"] + params[3] * (derivs_dict["du/dx"] ** 2)
+    string_form_of_the_equation = "du/dt = c[0] * t * du/dx + c[1] * t * (du/dx)^3 + c[2] * x * du/dx + c[3] * (du/dx)^2"
+    len_of_params = 4
+    return right_side, string_form_of_the_equation, len_of_params
+
+The equation string representation is shown in the 'string_form_of_the_equation' argument and the nuances brought into consideration from the exp_buffer are bounded within this new structure. The 'len_of_params' argument returns the length of the 'params' array used in the 'equation_v1' function. It is important to note because this array controls the coefficients to each part of the equation in the 'right_side' array.

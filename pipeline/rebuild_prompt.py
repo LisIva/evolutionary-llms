@@ -53,6 +53,8 @@ def create_new_buffer(start_pos, end_pos, new_dict_str, file_content, path, writ
 
 
 def rebuild_prompt(insert_eq_str, value, path="prompts/continue-iter.txt", num=0):
+    if len(insert_eq_str) > 250:
+        raise Exception('The composed equation has an unaccepted structure: len(insert_eq_str) > 250')
     start_pos, end_pos, dict_str, file_content = extract_exp_buffer(path)
     if is_duplicate(insert_eq_str, dict_str):
         print(f'LLM generated a duplicate on iter #{num}')

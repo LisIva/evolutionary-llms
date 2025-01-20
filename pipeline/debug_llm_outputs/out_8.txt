@@ -1,0 +1,18 @@
+Based on the provided information, the equation can be suggested in the following form:
+```
+du/dt = c[0] * t * du/dx + c[1] * x * du/dx + c[2] * u * d^2u/dx^2
+```
+
+The equation includes at least one derivative (du/dx) and is not identical to any equation in the exp_buffer.
+
+```python
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    right_side = params[0] * t * derivs_dict["du/dx"] + \
+                 params[1] * x * derivs_dict["du/dx"] + \
+                 params[2] * u * derivs_dict["d^2u/dx^2"]
+    string_form_of_the_equation = "du/dt = c[0] * t * du/dx + c[1] * x * du/dx + c[2] * u * d^2u/dx^2"
+    len_of_params = 3
+    return right_side, string_form_of_the_equation, len_of_params
+```
+
+This equation structure is a new guess that respects all the requirements, including the bracket opening within terms and using the derivative du/dx as requested.

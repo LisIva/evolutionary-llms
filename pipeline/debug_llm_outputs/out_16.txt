@@ -1,0 +1,28 @@
+After analyzing the data and the scores from the exp_buffer, it appears that incorporating the spatial derivative du/dx in some form yields the best results. Looking closer we see a pattern of du/dx decreasing as t increases, hinting at an exponential or logarithmic relationship.
+
+Taking this into account, one of the equations that could be a fit and is not in the exp_buffer already would be:
+
+```py
+du/dt = c[0] * np.exp(-c[1]*t) * du/dx
+```
+
+However, to ensure du/dx is not leading to a trivial solution, we can add u to the equation:
+
+```py
+du/dt = c[0] * np.exp(-c[1]*t) * du/dx + c[2]*u
+```
+
+Let's incorporate this in the equation generating function.
+Let's define this equation inside the function.
+
+Here is the complete function:
+
+```py
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    right_side = params[0] * np.exp(-params[1]*t) * derivs_dict["du/dx"] + params[2]*u
+    string_form_of_the_equation = '''du/dt = c[0] * np.exp(-c[1]*t) * du/dx + c[2]*u'''
+    len_of_params = 3
+    return right_side, string_form_of_the_equation, len_of_params
+```
+
+So let's run this function and see how our refined proposal performs. Again, we are aiming for the lowest possible score. Be aware that mathematical and python operations must correctly correspond. For instance, the mathematical operation exp(-ct) corresponds to np.exp(-c*t) in python.

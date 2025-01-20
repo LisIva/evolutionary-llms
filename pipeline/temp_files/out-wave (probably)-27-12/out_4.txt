@@ -1,0 +1,31 @@
+Based on the given points set and the information in the exp_buffer where the equation "d^2u/dt^2 = c[0] * du/dx" has a score of 6.79, a relatively simple equation form can be suggested. In order to create a novel equation that considers 'du/dx', we can modify the existing equation and include 't' as well to add a different form of dependency:
+
+d^2u/dt^2 = c[0] * t * du/dx.
+
+This equation was not evaluated previously and it uses 'du/dx' and 't' variables, maintaining the requirement for at least one derivative in the equation.
+
+Let's codify the equation into the function equation_v1:
+
+```python
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    
+    right_side = params[0] * t * derivs_dict["du/dx"]
+    
+    string_form_of_the_equation = "d^2u/dt^2 = c[0] * t * du/dx"
+    
+    len_of_params = 1
+    
+    return (right_side, string_form_of_the_equation, len_of_params)
+```
+
+Note that this system is also dependent on the single variable of t, in addition to the derivative du/dx. 
+
+Moreover, be aware this is a guess and should be tested for performance and validity.
+
+The system of equations is:
+
+d^2u/dt^2 = c[0] * t * du/dx
+
+Where 'c[0]' is a parameter that we will need to optimize. This equation explicitly links the second time derivative to the derivative regarding x and the time value. 
+
+The solution will be a function of t, x, u, and values contained in derivs_dict, for which on our data we will optimize 'c[0]' to minimize the error between the real d^2u/dt^2 and the predicted by our equation.

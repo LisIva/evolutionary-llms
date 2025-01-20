@@ -1,0 +1,11 @@
+```python
+
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    # Proposing a new equation that is not in exp_buffer and fulfills the requirements
+    right_side = params[0] * derivs_dict["du/dx"] + params[1] * t * derivs_dict["d^2u/dx^2"] + params[2] * u * derivs_dict["d^3u/dx^3"] 
+    string_form_of_the_equation = f"du/dt = c[0] * du/dx + c[1] * t * d^2u/dx^2 + c[2] * u * d^3u/dx^3"
+    len_of_params = 3
+    return right_side, string_form_of_the_equation, len_of_params
+
+```
+In the provided answer, the suggested equation is "du/dt = c[0] * du/dx + c[1] * t * d^2u/dx^2 + c[2] * u * d^3u/dx^3". I looked at the exp_buffer and proposed a new equation structure that is not present in the exp_buffer and includes the required derivative of du/dx. The number of parameters for this equation is 3.

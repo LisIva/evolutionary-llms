@@ -1,0 +1,21 @@
+To construct a new equation for `du/dt` that is not in the `exp_buffer`, we can try to combine the terms which were not present before. The previous equations used `t`, `du/dx`, `x`, `u`, `d^2u/dx^2` and higher powers of `du/dx`. We haven't seen an equation that includes `t * d^3u/dx^3` or `du/dx * d^2u/dx^2` term. Hence, we can form a new equation as a linear combination of these terms.
+
+To define the new function `equation_v1`, we'll initiate it to include a linear combination of `t` times `d^3u/dx^3` and `du/dx` times `d^2u/dx^2`. The terms have been chosen because of the requirement to use at least one derivative in the equation.
+
+So, the final version of the equation chosen after the analysis is:
+
+`du/dt = c[0] * t * d^3u/dx^3 + c[1] * du/dx * d^2u/dx^2`
+
+Then, the function implementing this equation would look like this:
+
+```
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    right_side = params[0] * t * derivs_dict["d^3u/dx^3"] + params[1] * derivs_dict["du/dx"] * derivs_dict["d^2u/dx^2"]
+    string_form_of_the_equation = "du/dt = c[0] * t * d^3u/dx^3 + c[1] * du/dx * d^2u/dx^2"
+    len_of_params = 2
+    return right_side, string_form_of_the_equation, len_of_params
+```
+
+It uses two parameters, `c[0]` and `c[1]`, to weigh the influence of the terms `t * d^3u/dx^3` and `du/dx * d^2u/dx^2`, respectively. Given that `du/dx` and `d^2u/dx^2` terms are already in the `derivs_dict` dictionary, this function should work as expected.
+
+In this case, the equation wasn't chosen purely from the `exp_buffer` scores but aims at including a term or terms that weren't considered before. This approach meets the requirements and avoids simply replicating or slightly altering previous equations.

@@ -1,29 +1,70 @@
-def find_positions(response=None, path: str = 'llm-output.txt', encoding: str = None):
+def find_positions(response=None, path: str = 'out_0.txt', encoding: str = None):
     if response is None:
         with open(path, 'r', encoding=encoding) as myf:
             response = myf.read()
 
     begin_pos = response.rfind("def equation_v1(")
-    end_pos = response[begin_pos:].find("return (") + begin_pos
-    return begin_pos, end_pos, response
+    if begin_pos == -1:
+        undefined_begin = True
+        begin_pos = response.find("right_side")
+    else: undefined_begin = False
+
+    return_pos = response[begin_pos:].find("return ") + begin_pos
+    end_pos = response[return_pos:].find("\n")
+    if end_pos == -1:
+        end_pos = len(response) - 1
+    else:
+        end_pos += return_pos
+    return begin_pos, end_pos, response, undefined_begin
 
 
-# def replace_evaluate_code():
-#     begin_pos, end_pos, context = find_positions(encoding="utf-8")
-#     text_to_replace = context[begin_pos:end_pos]
-#
-#     begin_eval, end_eval, eval_file = find_positions('evaluator.py')
-#     new_eval_file = eval_file[:begin_eval] + text_to_replace + eval_file[end_eval:]
-#     exec(new_eval_file)
+def replace_wrong_coeffs(eq_text):
+    begin_pos = eq_text.find("string_form_of_the_equation = ")
+    line_end_pos = eq_text[begin_pos:].find("\n") + begin_pos
+    str_old = eq_text[begin_pos + len("string_form_of_the_equation = "):line_end_pos]
+
+    str_new = str_old
+    start_replace_idx = str_new.find('{params')
+    if start_replace_idx == -1:
+        return eq_text
+    else:
+        c_idx = 0
+        while str_new.find('{params') != -1:
+            param_end_pos = str_new[start_replace_idx:].find('}') + start_replace_idx
+            replace_str = str_new[start_replace_idx:param_end_pos+1]
+            str_new = str_new.replace(replace_str, f'c[{c_idx}]')
+            c_idx += 1
+            start_replace_idx = str_new.find('{params')
+        return eq_text.replace(str_old, str_new)
 
 
-def write_equation_v1_fun(response=None):
-    begin_pos, end_pos, context = find_positions(response=response, encoding="utf-8")
-    end_of_fun_pos = context.find(")", end_pos, len(context))
-    eq1_fun_text = context[begin_pos:end_of_fun_pos+1]
+def add_tabulation(context):
+    new_context = ['    ',]
+
+    for i, char in enumerate(context):
+        new_context += char
+        if char == '\n':
+            if i < len(context) - 2:
+                if context[i+1] == ' ' and context[i+2] == ' ':
+                    pass
+                else: new_context += '    '
+
+    new_context = ''.join(new_context)
+    return new_context
+
+
+def write_equation_v1_fun(response=None, path='out_0.txt'):
+    begin_pos, end_pos_newstr, context, undefined_begin = find_positions(response=response, encoding="utf-8", path=path)
+    if undefined_begin:
+        tabbed_context = add_tabulation(context[begin_pos:end_pos_newstr+1])
+        eq1_fun_text = 'def equation_v1(t, x, u, derivs_dict, params):\n' + tabbed_context
+    else:
+        eq1_fun_text = context[begin_pos:end_pos_newstr+1]
+    eq1_fun_text = replace_wrong_coeffs(eq1_fun_text)
     return eq1_fun_text
 
 
 if __name__ == "__main__":
-    exec("def fun1(a, b):\n\treturn a+b\n")
-    print(fun1(5, 6))
+    write_equation_v1_fun(path='out_0.txt')
+
+

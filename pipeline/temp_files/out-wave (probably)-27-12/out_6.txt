@@ -1,0 +1,17 @@
+After analyzing the scores in the exp_buffer, it seems that the equations involving only the first derivative are not effective, scoring higher than 3.7 which is the best score attained so far by the "d^2u/dt^2 = c[0] * (du/dx)**2 + c[1] * d^2u/dx^2" equation. A term of the second derivative could be responsible for much of the phenomena, so we should include "d^2u/dx^2" in our model.
+
+The new guess is that the second derivative of u with respect to t is a linear combination of "(du/dx)**2" and "d^2u/dx^2" with some additional parameters, perhaps "t" and "x". 
+
+Let's formulate the equation: 
+
+"d^2u/dt^2 = (du/dx)**2 * c[0] + d^2u/dx^2 * c[1] + c[2] * (t + x)"
+
+This equation includes both the second derivative "d^2u/dx^2" and the square of the first derivative "(du/dx)**2", including both "t" and "x" as potential input parameters.
+
+Now, let's translate this to an euqation function as follow:
+
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    right_side = (derivs_dict["du/dx"]*derivs_dict["du/dx"] * params[0] + derivs_dict["d^2u/dx^2"] * params[1] + params[2] * (t + x))
+    string_form_of_the_equation = "d^2u/dt^2 = c[0] * (du/dx)^2 + c[1] * d^2u/dx^2 + c[2] * (t + x)"
+    len_of_params = 3
+    return (right_side, string_form_of_the_equation, len_of_params)
