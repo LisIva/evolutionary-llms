@@ -1,0 +1,29 @@
+Given the input data, a simple model that can roughly fit the data set given is a linear model with respect to 'du/dx'. This arises from the observation in the data that du/dt appears to be closely related to du/dx. Hence, the following equation is suggested for *equation_v1.
+
+```python
+P = 1
+
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    right_side = params[0] * derivs_dict["du/dx"]
+    string_form_of_the_equation = "du/dt = c[0] * du/dx"
+    len_of_params = 1
+    return right_side, string_form_of_the_equation, len_of_params
+```
+
+This means that our assumption is that the change in 'u' per unit time 't' is directly proportional to the change in 'u' per unit distance 'x'. So, the PDE we are trying to model is of the form: du/dt = c[0] * du/dx, where c[0] is the constant to be optimized. 
+
+The `params` array holds the free parameters of the equation which is of length 'P' = 1 (since only one parameter `c[0]` is used in this case). Note that you might need more parameters for a more complex model. This structure should make sure the solution has continuity of time and space, and smoothness over the observed domain.
+
+This is a simplified approach and might not accurately model complex dynamics of the problem you're dealing with. For a more complex and accurate behavior model, a more complex version of the equation must be used, which might involve higher order derivatives and more model parameters.
+
+For the sake of simplicity, the use of higher order derivatives is not included in this model. Adding higher order derivatives can potentially increase complexity of your model and might not necesarilly improve its predictive power, especially if data quality or quantity is poor. However, choosing a model is often a trade-off between explanatory power and model complexity, which should be an informed decision depending on the specific characteristics of your problem. 
+
+You may also want to evaluate which variables have a significant effect on the model, something that could be done by statistical methods or derivative-based sensitivity analysis. However, performing those analyses on a large complex data set poses significant challenges and might require certain assumptions or theoretical knowledge about the underlying process. Thus, deciding how to model a complex multivariate behavior should be done carefully and based on both the statistical significance of the variables and theoretical insights about their impact. 
+
+Sensitivity analysis and best practices in data handling could also help ensure data quality relating to measuring and interpolating points in space and time as this might have an impact on the estimated derivatives.
+
+Please let me know if you want a more detailed analysis or have any additional questions. 
+
+Yours,
+
+**Eugene Cheung**

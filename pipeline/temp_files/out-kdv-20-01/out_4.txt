@@ -6,17 +6,17 @@ Let's implement this in equations_v1:
 
 ```python
 def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
-    right_side = params[0] * derivs_dict["du/dx"] * u * t * x
-    string_form_of_the_equation = "du/dt = c[0] * du/dx * u * t * x"
-    len_of_params = 1
+    right_side = params[0] * t * derivs_dict["du/dx"] + params[1]
+    string_form_of_the_equation = "du/dt = c[0] * t * du/dx + c[1]"
+    len_of_params = 2
     return right_side, string_form_of_the_equation, len_of_params
 ```
 
 We suggest `equation_v1` to be 'du/dt = c[0] * t * du/dx + c[1]', which includes elements not previously attempted. The 't' introduces time dependence, 'du/dx' satisfies the dependence on a derivative condition, and 'c[1]' ensures that our equation includes an offset, offering more flexibility to adapt to the points_set's pattern.
 ```python
 def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
-    right_side = params[0] * derivs_dict["du/dx"] * x
-    string_form_of_the_equation = "du/dt = c[0] * du/dx * x"
-    len_of_params = 1
+    right_side = params[0] * t * derivs_dict["du/dx"] + params[1]
+    string_form_of_the_equation = "du/dt = c[0] * t * du/dx + c[1]"
+    len_of_params = 2
     return right_side, string_form_of_the_equation, len_of_params
 ```

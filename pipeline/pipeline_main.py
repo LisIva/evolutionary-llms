@@ -6,7 +6,7 @@ from tqdm import tqdm
 import sys
 import traceback
 
-MAX_ITER = 20
+MAX_ITER = 11
 DIR_NAME = 'kdv'
 START_ITER = 0
 

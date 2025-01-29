@@ -1,9 +1,11 @@
 Based on the dataset and check from the exp_buffer, I propose the below equation:
 
 def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
-    right_side = params[0] * derivs_dict["du/dx"] * derivs_dict["du/dt"] * u
-    string_form_of_the_equation = f"du/dt = c[0] * du/dx * du/dt * u"
-    len_of_params = 1
+    du_dx = derivs_dict["du/dx"]
+    d2u_dx2 = derivs_dict["d^2u/dx^2"]
+    right_side = params[0] * du_dx + params[1] * d2u_dx2 + params[2] * t * du_dx
+    len_of_params = 3
+    string_form_of_the_equation = "du/dt = c[0] * du/dx + c[1] * d^2u/dx^2 + c[2] * t * du/dx"
     return right_side, string_form_of_the_equation, len_of_params
 
 The proposed equation is 'du/dt = c[0] * du/dx + c[1] * d^2u/dx^2 + c[2] * t* du/dx'. I included first, second and third derivatives as independent variables as the first derivative's presence is necessary in your conditions. This version is suggested as it is not in the previous buffer and it is a reasonable form based on the information.

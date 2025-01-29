@@ -14,9 +14,16 @@ Let's implement `equation_v1` function with the given guidelines:
 ```python
 
 def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
-    right_side = params[0] * derivs_dict["du/dx"] * derivs_dict["du/dt"] * x * t * u
-    string_form_of_the_equation = f"du/dt = c[0] * du/dx * du/dt * x * t * u"
-    len_of_params = 1
+
+    # c0 * (du/dx + u)
+    # c1 * u * (t + x)
+    # c2 * (d^2u/dx^2) * (t^2 + x^2)
+    # c3 * t^3
+    # c4 * x^3
+    right_side = (params[0] * (derivs_dict["du/dx"] + u)) + (params[1] * u * (t + x)) + (params[2] * derivs_dict["d^2u/dx^2"] * (t**2 + x**2)) + (params[3] * t**3) + (params[4] * x**3)
+    string_form_of_the_equation = "du/dt = c[0] * ( du/dx + u ) + c[1] * u * ( t + x ) + c[2] * d^2u/dx^2 * (t^2 + x^2) + c[3] * t^3 + c[4] * x^3"
+    len_of_params = 5
+
     return right_side, string_form_of_the_equation, len_of_params
 
 ```

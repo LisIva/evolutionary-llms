@@ -9,11 +9,11 @@ This function does not include the highest order derivative (d^3u/dx^3) as it wa
 
 Let's implement this function as equation_v1 based on the provided template:
 
-
 def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
-    right_side = params[0] * derivs_dict["du/dx"] * u
-    string_form_of_the_equation = "du/dt = c[0] * du/dx * u"
-    len_of_params = 1
+    right_side = params[0]*t + params[1]*x + params[2]*u + params[3]*derivs_dict["du/dx"] + params[4]*derivs_dict["d^2u/dx^2"]
+    string_form_of_the_equation = "du/dt = c[0] * t + c[1] * x + c[2] * u + c[3] * du/dx + c[4] * d^2u/dx^2"
+    len_of_params = 5
     return right_side, string_form_of_the_equation, len_of_params
+An equility equation du/dt = (params[0]*t + params[1]*x + params[2]*u + params[3]*derivs_dict["du/dx"] + params[4]*derivs_dict["d^2u/dx^2"]) aims to connect the values from the mentioned columns of the data in a reasonable function form. Verification of this function correctness and fitting the relation to the observed data is left to given evaluate function.  
 
 But it's important to notice that the number of parameters (right now it's 5) and also the selected combination should be adjusted based on what we can properly identify from the observed data. Identification of suitable function form is often done by domain knowledge about the phenomenon the data comes from and validation with methods like partial correlation analysis. Also in cases of limited data, having more parameters than actually needed might also lead to overfitting, which leads to a function that performs worse on unseen data.

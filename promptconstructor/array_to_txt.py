@@ -4,7 +4,8 @@ import sys
 from pathlib import Path
 from scipy.interpolate import RegularGridInterpolator
 np.set_printoptions(threshold=sys.maxsize)
-
+import tensorly as tl
+from tensorly.decomposition import tensor_train
 
 PARENT_PATH = Path().absolute().parent
 # дописать write_file для class Data
@@ -159,6 +160,28 @@ if __name__ == "__main__":
     u_x, _, _, u_x_f  = load_resample_burg_array("du_dx1")
 
     data_burg = Data('burg')
+    all_raveled_ls = []
+    for input in data_burg.eval_data['inputs']: # t, x, u
+        # all_raveled_ls.append(np.expand_dims(input.ravel(), axis=0))
+        all_raveled_ls.append(np.expand_dims(input, axis=2))
+
+    for deriv_vals in data_burg.eval_data['derivs_dict'].values():
+        all_raveled_ls.append(np.expand_dims(deriv_vals, axis=2))
+    input_mx = np.concatenate(all_raveled_ls, axis=2)
+    input_ten = tl.tensor(input_mx)
+
+    original_shape = 101*101*5
+    cut_affordable = 30*30*5
+    cores = tensor_train(input_ten, rank=[1, 3, 3, 1])
+    reconstructed_tensor = tl.tt_to_tensor(cores)
+    error = np.sum(np.fabs(tl.to_numpy(input_ten) - tl.to_numpy(reconstructed_tensor))) / np.sum(input_ten) * 100
+    error_norm = np.linalg.norm(tl.to_numpy(input_ten) - tl.to_numpy(reconstructed_tensor)) / np.linalg.norm(tl.to_numpy(input_ten)) * 100
+
+
+    new_shape = cores[0].shape[0] * cores[0].shape[1] * cores[0].shape[2] + \
+              cores[1].shape[0] * cores[1].shape[1] * cores[1].shape[2] + \
+              cores[2].shape[0] * cores[2].shape[1] * cores[2].shape[2]
+    e2 = data_burg.eval_data['derivs_dict']
     # data_burg.write_resampled_data()
     data_burg_s = Data('sindy-burg')
     data_burg_s.write_resampled_data()

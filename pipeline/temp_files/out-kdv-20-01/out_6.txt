@@ -1,9 +1,9 @@
 Based on the provided data, a possible function that fits the description and is not in the exp_buffer could be:
 
 def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
-    right_side = params[0] * derivs_dict["du/dx"] * derivs_dict["du/dt"] * x
-    string_form_of_the_equation = f"du/dt = c[0] * du/dx * du/dt * x"
-    len_of_params = 1
+    right_side = params[0] * t * derivs_dict["du/dx"] + params[1] * u * derivs_dict["d^2u/dx^2"] + params[2] * derivs_dict["du/dx"]**2
+    string_form_of_the_equation = "du/dt = c[0] * t * du/dx + c[1] * u * d^2u/dx^2 + c[2] * (du/dx)^2"
+    len_of_params = 3
     return right_side, string_form_of_the_equation, len_of_params
 
 The equation form suggested takes a look at the best equations in the exp_buffer variable and uses the aspects that tend to correlate well with the data:
