@@ -1,4 +1,4 @@
-def find_positions(response=None, path: str = 'out_0.txt', encoding: str = None):
+def find_eq_positions(response=None, path: str = 'out_0.txt', encoding: str = None):
     if response is None:
         with open(path, 'r', encoding=encoding) as myf:
             response = myf.read()
@@ -53,8 +53,8 @@ def add_tabulation(context):
     return new_context
 
 
-def write_equation_v1_fun(response=None, path='out_0.txt'):
-    begin_pos, end_pos_newstr, context, undefined_begin = find_positions(response=response, encoding="utf-8", path=path)
+def compose_equation_v1_fun(response=None, path='out_0.txt'):
+    begin_pos, end_pos_newstr, context, undefined_begin = find_eq_positions(response=response, encoding="utf-8", path=path)
     if undefined_begin:
         tabbed_context = add_tabulation(context[begin_pos:end_pos_newstr+1])
         eq1_fun_text = 'def equation_v1(t, x, u, derivs_dict, params):\n' + tabbed_context
@@ -64,7 +64,28 @@ def write_equation_v1_fun(response=None, path='out_0.txt'):
     return eq1_fun_text
 
 
+def retrieve_notes(response=None, path: str = 'out_0.txt', encoding: str = None):
+    if response is None:
+        with open(path, 'r', encoding=encoding) as myf:
+            response = myf.read()
+    begin_pos = response.rfind('"""\nImportant notes:')
+    return_pos = response[begin_pos:].find('\n"""') + begin_pos
+    notes = response[begin_pos:return_pos] + '\n"""'
+    return notes
+
+
+def retrieve_example_response(response=None, path: str = 'out_0.txt', encoding: str = None):
+    if response is None:
+        with open(path, 'r', encoding=encoding) as myf:
+            response = myf.read()
+    begin_pos = response.rfind('```python')
+    return_pos = response[begin_pos:].rfind('```') + begin_pos
+    ex_response = response[begin_pos:return_pos]
+    return ex_response
+
+
 if __name__ == "__main__":
-    write_equation_v1_fun(path='out_0.txt')
+    # write_equation_v1_fun(path='out_0.txt')
+    retrieve_example_response()
 
 

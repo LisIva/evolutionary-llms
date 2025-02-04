@@ -1,4 +1,5 @@
 import re
+from extract_llm_responses import retrieve_notes, retrieve_example_response
 
 
 def extract_exp_buffer(path):
@@ -44,15 +45,24 @@ def insert_equation(insert_eq_str, insert_val, dict_str):
         return ",\n".join(recreate_dict) + ','
 
 
-def create_new_buffer(start_pos, end_pos, new_dict_str, file_content, path, write_file=False):
-    new_buff_file = file_content[:start_pos] + new_dict_str + file_content[end_pos:]
+def find_new_example_pos(file_content):
+    begin_pos = file_content.rfind('```python')
+    end_pos = file_content[begin_pos:].rfind('```') + begin_pos
+    return begin_pos, end_pos
+
+
+def create_new_file(start_pos, end_pos, new_dict_str, new_ex_response, file_content, path, write_file=False):
+    start_ex_pos, end_ex_pos = find_new_example_pos(file_content)
+    # new_buff_file = file_content[:start_pos] + new_dict_str + file_content[end_pos:]
+    new_buff_file = file_content[:start_pos] + new_dict_str + file_content[end_pos:start_ex_pos] \
+                    + new_ex_response + file_content[end_ex_pos:]
     if write_file:
         with open(path, 'w') as prompt:
             prompt.write(new_buff_file)
     return new_buff_file
 
 
-def rebuild_prompt(insert_eq_str, value, path="prompts/continue-iter.txt", num=0):
+def rebuild_prompt(insert_eq_str, value, response, path="prompts/continue-iter.txt", num=0):
     if len(insert_eq_str) > 250:
         raise Exception('The composed equation has an unaccepted structure: len(insert_eq_str) > 250')
     start_pos, end_pos, dict_str, file_content = extract_exp_buffer(path)
@@ -60,7 +70,9 @@ def rebuild_prompt(insert_eq_str, value, path="prompts/continue-iter.txt", num=0
         print(f'LLM generated a duplicate on iter #{num}')
         return None, None
     new_dict_str = insert_equation(insert_eq_str, value, dict_str)
-    new_file = create_new_buffer(start_pos, end_pos, new_dict_str, file_content, path, write_file=True)
+
+    new_ex_response = retrieve_example_response(response)
+    new_file = create_new_file(start_pos, end_pos, new_dict_str, new_ex_response, file_content, path, write_file=True)
     # new_file = create_new_buffer(start_pos, end_pos, new_dict_str, file_content, path)
     return new_file, file_content
 

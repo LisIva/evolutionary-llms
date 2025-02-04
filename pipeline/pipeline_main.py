@@ -1,4 +1,4 @@
-from evaluator import piped_evaluator, optimization_track, optimization_track_tripods
+from evaluator import piped_evaluator, optimization_track
 from get_llm_response import get_response, get_debug_response
 from rebuild_prompt import rebuild_prompt
 from clean_directories import clean_output_dir, reset_prompt_to_init
@@ -6,13 +6,14 @@ from tqdm import tqdm
 import sys
 import traceback
 
-MAX_ITER = 11
-DIR_NAME = 'kdv'
+MAX_ITER = 2
+DIR_NAME = 'burg'
 START_ITER = 0
 
 DEBUG = True # True False
 PRINT_EXC = True
-EXIT = False
+EXIT = True
+# На завтра: заменить пример вывода в 0м и continue промптах - llm должна выводить рассуждения в сжатом виде!
 
 
 def perform_step(path, num, debug=False):
@@ -21,7 +22,7 @@ def perform_step(path, num, debug=False):
     else:
         response = get_response(prompt_path=path, num=num, dir_name=DIR_NAME, print_info=False)
     score, str_equation, params = piped_evaluator(response, DIR_NAME)
-    new_prompt, old_prompt = rebuild_prompt(str_equation, score, num=num)
+    new_prompt, old_prompt = rebuild_prompt(str_equation, score, response, num=num)
     return new_prompt, score, str_equation, params
 
 
@@ -43,7 +44,7 @@ def step_0(path="prompts/zero-iter.txt", debug=False):
     new_prompt, score, str_equation, params = perform_step(path, num=0, debug=debug)
     return new_prompt, score, str_equation, params
 
-
+# , however the experience buffer suggests that
 # LLM нашла бюргерса со второго раза, т к сначала предположила самую просутю зависимость: du/dt = k * du/dx
 # надо описать это в начальном промпте: LLM должна знать что сначала следует генерить простые случаи и затем нанизывать на них ноые слагаемые
  # обработать случай когда на 0й итерации LLM дает хрень
@@ -60,10 +61,13 @@ if __name__ == '__main__':
             except Exception as e:
                 print('An exception occurred on iter #0:')
                 print(traceback.format_exc())
+                if EXIT: sys.exit()
 
     for num in tqdm(range(START_ITER, MAX_ITER), desc="LLM's progress"):
         new_prompt, score, str_equation, params = step("prompts/continue-iter.txt", num, debug=DEBUG)
 
     optimization_track1 = optimization_track
-    optimization_track2 = optimization_track_tripods
     print()
+
+
+

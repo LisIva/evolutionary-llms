@@ -37,7 +37,7 @@ def get_response(prompt_path="prompts/continue-iter.txt", num=0, dir_name='burg'
         messages=messages,
         temperature=1.0,
         n=1,
-        max_tokens=1500, # максимальное число ВЫХОДНЫХ токенов
+        max_tokens=2000, # максимальное число ВЫХОДНЫХ токенов
         extra_headers={ "X-Title": "EPDELLM"},)
 
     response = response_big.choices[0].message.content

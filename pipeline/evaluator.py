@@ -2,16 +2,15 @@ from typing import Any
 import numpy as np
 from scipy.optimize import minimize
 from promptconstructor.array_to_txt import load_resample_burg_array
-from extract_llm_equation import write_equation_v1_fun
+from extract_llm_responses import compose_equation_v1_fun
 from solution_complexity import eval_complexity
 from promptconstructor.array_to_txt import Data
 from promptconstructor.info_prompts import prompt_complete_inf
 optimization_track = {}
-optimization_track_tripods = {}
 
 
 def define_eq(response):
-    eq1_fun_text = write_equation_v1_fun(response)
+    eq1_fun_text = compose_equation_v1_fun(response)
     exec(eq1_fun_text, globals())
 
 
@@ -62,23 +61,15 @@ def piped_evaluator(response, dir_name='burg', resample_shape=(20, 20), debug_ev
         print(f"\nException while finding a complexity score")
 
     u_t = data['derivs_dict'][left_side]
-    minim = np.abs(np.min(u_t))
-    maxim = np.abs(np.max(u_t))
-    mean = np.mean(np.fabs(u_t))
-    mean2 = np.mean(u_t*u_t)
-    if minim == 0:
-        minim += 0.00001
-    t1 = score / minim * 1000
-    t2 = score / maxim * 1000
 
-    relat_mean = score / mean * 1000
-    optimization_track_tripods[string_form_of_the_equation] = (float(round_score(t1)), float(round_score(t2)), float(round_score(relat_mean)))
-
-    total_score = (loss / mean2 * 1000 + relat_mean) / 2
+    mean_ut_fabs = np.mean(np.fabs(u_t))
+    relat_mean = score / mean_ut_fabs * 1000
+    # mean_ut2 = np.mean(u_t * u_t)
+    # total_score = (loss / mean2 * 1000 + relat_mean) / 2
     rounded_relat_score = round_score(relat_mean)
 
-    rounded_tot_score = round_score(total_score)
-    optimization_track[string_form_of_the_equation] = (float(rounded_tot_score), complexity_score)
+    # rounded_tot_score = round_score(total_score)
+    optimization_track[string_form_of_the_equation] = (float(rounded_relat_score), complexity_score)
     if not debug_eval:
         return rounded_relat_score, string_form_of_the_equation, params
     else:

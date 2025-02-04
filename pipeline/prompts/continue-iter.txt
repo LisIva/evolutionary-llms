@@ -1,7 +1,11 @@
-What is a possible function with the general equation form {full_form} that could be described with the set of points named points_set, that have the form of '{dots_order}'. Give an answer in the function equation_v1 constructing it in a way described by equation_v0.
+What is a possible function with the general equation form {full_form} that could be described with the set of points named points_set, that have the form of '{dots_order}' (note that u itself is a function of x and t)? Give an answer in the function equation_v1 constructing it in a way described by equation_v0.
 The dictionary exp_buffer stores previous attempts to find the equation evaluated with evaluate function. While generating equation_v1 look at the exp_buffer and use the scores presented there to make a new guess about the equation structure. The best score is 0.
+There is also an "Important notes" section that contains the most important information discovered about the equation. Refer to it and the experience buffer to suggest a new equation. Update the "Important notes" so that the other LLMs have better chance of discovering a new equation, but remember that the section can only contain up to 9 sentences.
+To summarize, you need to output 2 things - the code of equation_v1 AND the updated section of Important notes.
+
 Note that although the general equation form is {full_form}, the resulting equation may take on simpler forms (BUT IT DOESN'T HAVE TO!), like {left_deriv} = F(t, du/dx).
 Make sure the suggested equation is dependent on at least one derivative, so in the provided case du/dx must be included.
+
 
 Requirements:
 1. First look at the exp_buffer and then suggest the equation, the string form of which is not already there!
@@ -37,27 +41,28 @@ def evaluate(data: dict) -> float:
 points_set =
 {points_set}
 exp_buffer = {{
-"du/dt = c[0] * du/dx * du/dt * x * t * u": 1000,
-"du/dt = c[0] * du/dx * u": 973,
-"du/dt = c[0] * du/dx * t": 928,
-"du/dt = c[0] * du/dx * du/dt * u": 898,
-"du/dt = c[0] * du/dx * t * x": 860,
-"du/dt = c[0] * du/dx": 843,
-"du/dt = c[0] * du/dx * x": 768,
-"du/dt = c[0] * du/dx * du/dt * x * t": 703,
-"du/dt = c[0] * du/dx * du/dt": 698,
-"du/dt = c[0] * du/dx * du/dt * x": 641,
-"du/dt = c[0] * du/dx * u + c[1] * d^3u/dx^3 + c[2] * cos(t)sin(x)": 2.03,}}
+"du/dt = c[0] * du/dx * t": 558,
+"du/dt = -c[0] * du/dx": 527,}}
 
 #/end of input data
 
-""" An example of desired output: """
-def equation_v0(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
-    right_side = params[0] * derivs_dict["du/dx"]
-    string_form_of_the_equation = "{left_deriv} = c[0] * du/dx"
-    len_of_params = 1
+# An example of desired output in the form of previously discovered equation:
+```python
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray): 
+    right_side = params[0] * derivs_dict["du/dx"] * t 
+    string_form_of_the_equation = f'du/dt = c[0] * du/dx * t' 
+    len_of_params = 1 
     return right_side, string_form_of_the_equation, len_of_params
 
-""" The function to complete: """
-def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
-    """Generate the code"""
+"""
+Important notes:
+The relationship between du/dt and du/dx seems to be most accurately described when considering the interaction with the variable t.
+In the multiplicative form of du/dt = F(t, du/dx), 
+the expression has a trend showing that du/dt is proportionally related to du/dx and more importantly is influenced 
+by the value of t possibly demonstrating a decay or exponential-like relationship.
+The multiplicative factor t affects the strength of the relation between du/dt and du/dx, 
+highlighting the changing dynamic of du/dt relative to du/dx across the sampled "t" intervals.
+This equation incorporates the dependence of du/dt on du/dx and "t", 
+notably expanding on the previous suggestion to include a temporal factor for the influence of t on du/dt.
+"""
+```
