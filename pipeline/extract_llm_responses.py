@@ -68,7 +68,7 @@ def retrieve_notes(response=None, path: str = 'out_0.txt', encoding: str = None)
     if response is None:
         with open(path, 'r', encoding=encoding) as myf:
             response = myf.read()
-    begin_pos = response.rfind('"""\nImportant notes:')
+    begin_pos = response.rfind('Important notes:')
     return_pos = response[begin_pos:].find('\n"""') + begin_pos
     notes = response[begin_pos:return_pos] + '\n"""'
     return notes

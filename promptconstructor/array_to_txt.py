@@ -4,8 +4,8 @@ import sys
 from pathlib import Path
 from scipy.interpolate import RegularGridInterpolator
 np.set_printoptions(threshold=sys.maxsize)
-import tensorly as tl
-from tensorly.decomposition import tensor_train
+# import tensorly as tl
+# from tensorly.decomposition import tensor_train
 
 PARENT_PATH = Path().absolute().parent
 # дописать write_file для class Data

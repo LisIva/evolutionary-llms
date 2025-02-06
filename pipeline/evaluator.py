@@ -6,6 +6,7 @@ from extract_llm_responses import compose_equation_v1_fun
 from solution_complexity import eval_complexity
 from promptconstructor.array_to_txt import Data
 from promptconstructor.info_prompts import prompt_complete_inf
+from numpy import ndarray
 optimization_track = {}
 
 

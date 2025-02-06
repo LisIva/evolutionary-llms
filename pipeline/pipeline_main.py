@@ -6,11 +6,11 @@ from tqdm import tqdm
 import sys
 import traceback
 
-MAX_ITER = 2
+MAX_ITER = 6
 DIR_NAME = 'burg'
 START_ITER = 0
 
-DEBUG = True # True False
+DEBUG = False # True False
 PRINT_EXC = True
 EXIT = True
 # На завтра: заменить пример вывода в 0м и continue промптах - llm должна выводить рассуждения в сжатом виде!
