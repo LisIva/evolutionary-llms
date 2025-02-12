@@ -45,10 +45,10 @@ def insert_equation(insert_eq_str, insert_val, dict_str):
         return ",\n".join(recreate_dict) + ','
 
 
-def find_new_example_pos(file_content):
-    begin_pos = file_content.rfind('```python')
-    end_pos = file_content[begin_pos:].rfind('```') + begin_pos
-    return begin_pos, end_pos
+# def find_new_example_pos(file_content):
+#     begin_pos = file_content.rfind('```python')
+#     end_pos = file_content[begin_pos:].rfind('```') + begin_pos
+#     return begin_pos, end_pos
 
 
 def create_new_file(start_pos, end_pos, new_dict_str, response, continue_content, path, write_file=False):
@@ -56,8 +56,11 @@ def create_new_file(start_pos, end_pos, new_dict_str, response, continue_content
     new_str_fun = compose_equation_v1_fun(response)
     old_notes = retrieve_notes(continue_content)
     old_str_fun = compose_equation_v1_fun(continue_content)
-    continue_content = continue_content.replace(old_str_fun, new_str_fun)
-    continue_content = continue_content.replace(old_notes, new_notes)
+
+    # if notes field exists replace 'def eq_1' and the notes
+    if len(new_notes) > 8:
+        continue_content = continue_content.replace(old_notes, new_notes)
+        continue_content = continue_content.replace(old_str_fun, new_str_fun)
 
     new_buff_file = continue_content[:start_pos] + new_dict_str + continue_content[end_pos:]
     # start_ex_pos, end_ex_pos = find_new_example_pos(continue_content)

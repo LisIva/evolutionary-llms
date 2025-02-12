@@ -1,0 +1,13 @@
+```python
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    right_side = params[0] * derivs_dict["du/dx"] + params[1] * t * derivs_dict["du/dx"] + params[2] * x * derivs_dict["du/dx"]
+    string_form_of_the_equation = "du/dt = c[0] * du/dx + c[1] * t * du/dx + c[2] * x * du/dx"
+    len_of_params = 3
+    return right_side, string_form_of_the_equation, len_of_params
+
+"""
+
+Important notes:
+The exploration of potential equation forms has revealed that directly involving 'u' seems to not contribute positively to the fitting score, indicating that the true equation might not directly depend on 'u' but on its derivative 'du/dx' instead. The best fitting equations found so far always include 'du/dx', implying that changes in 'u' with respect to 'x' carry critical information for the equation's structure. Simultaneously, including both 't' and 'x' in relation to 'du/dx' has shown the highest potential for accurately capturing the dynamic behavior represented by the dataset. Considering how time and distance ('t' and 'x') influence 'du/dx' can possibly reveal the underlying physical or mathematical principles governing the data's evolution. 
+
+"""

@@ -1,0 +1,26 @@
+```python
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    right_side = -params[0] * derivs_dict["du/dx"] + params[1] * t * derivs_dict["du/dx"] - params[2] * t * x
+    string_form_of_the_equation = "du/dt = -c[0] * du/dx + c[1] * t * du/dx - c[2] * t * x"
+    len_of_params = 3
+    return right_side, string_form_of_the_equation, len_of_params
+
+"""
+
+Important notes:
+1. The best approach so far averages a score of 96.0, closer to 0 is better.
+2. Trial fits that incorporated factors like 't' and both 't' and 'du/dx' have shown to yield the best results.
+3. Introducing a product of time and position 't*x' in conjunction with the derivative 'du/dx' doesn't seem to perform as well as including 't' alone.
+4. Derivatives 'du/dx' have been consistently included in the equations, implying it holds substantial information about the system's dynamics.
+5. Higher scoring configurations have typically involved both 'du/dx' and 't', indicating the importance of time-varying effects.
+6. The initial set involving 'du/dx' and 't' was very competitive.
+7. There's suggestion of an interaction between 't' and 'du/dx', but 't*x' was not as successful.
+8. Scores obtained from combinations involving multiple derivatives, 't', and 'x' showed a variety in performance, with 't' and 'du/dx' combinations leading to the best models.
+9. An interesting finding was that 'du/dt' did not need to be directly included in the equations to achieve a competitive score.
+10. This pursuit is about finding the most relevant aspects of 't', 'x', and derivatives without simplifying to a form that makes the equation overly straightforward. 
+11. Introducing a product of time and derivative 't*du/dx' was a fruitful direction.
+12. Simplifying equations to linear forms with derivative 'du/dx' while including 't' has proven to be beneficial.
+13. Attempts to include 'x' directly in the equations with time 't' have not matched the performance of 't' alone.
+14. The relationship between 't' and 'du/dx' is significant, suggesting there is underlying dynamics that these variables capture effectively.
+15. The score evaluation method prefers equations that balance the relevance of 't', 'x', and derivatives, rather than weighing one factor heavily over others.
+"""

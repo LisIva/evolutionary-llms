@@ -6,14 +6,13 @@ from tqdm import tqdm
 import sys
 import traceback
 
-MAX_ITER = 6
+MAX_ITER = 7
 DIR_NAME = 'burg'
-START_ITER = 0
+START_ITER = 2
 
 DEBUG = False # True False
 PRINT_EXC = True
 EXIT = True
-# На завтра: заменить пример вывода в 0м и continue промптах - llm должна выводить рассуждения в сжатом виде!
 
 
 def perform_step(path, num, debug=False):
@@ -44,10 +43,7 @@ def step_0(path="prompts/zero-iter.txt", debug=False):
     new_prompt, score, str_equation, params = perform_step(path, num=0, debug=debug)
     return new_prompt, score, str_equation, params
 
-# , however the experience buffer suggests that
-# LLM нашла бюргерса со второго раза, т к сначала предположила самую просутю зависимость: du/dt = k * du/dx
-# надо описать это в начальном промпте: LLM должна знать что сначала следует генерить простые случаи и затем нанизывать на них ноые слагаемые
- # обработать случай когда на 0й итерации LLM дает хрень
+
 if __name__ == '__main__':
     if START_ITER == 0:
         while True:

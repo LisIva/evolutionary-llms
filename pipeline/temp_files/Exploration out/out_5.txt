@@ -1,0 +1,38 @@
+Based on the provided points_set and the exp_buffer, it seems that the du/dt is strictly monotonically decreasing for each given time value, while u and du/dx are significantly changing in respect to x. Considering how du/dx is changing sublinearly compared to u while the du/dt is almost constant (though slightly decreasing) with changing values of x might suggest a linear relationship of du/dt with du/dx, u and potentially higher terms of du/dx such as (du/dx) ** 2.
+
+However, the dominance of the du/dx influence in the equation increases with time t increasing which is indicated by the higher du/dt absolute values in relation to du/dx changes. Furthermore, the du/dt also presents a dependence on the t variable that has an increment higher with big values of t.
+
+According to the information in the exp_buffer, the equations that indicate a good performance usually have linear terms of du/dx and depend on either t or u; constructing an equation with a similar structure might yield in validating these findings.
+
+Therefore, to define a new equation that is not already presented in the exp_buffer, I suggest incorporating terms not utilized, applying an exponential term using du/dx to the equation to include max importance of du/dx:
+
+```python
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    right_side = params[0] * np.exp(derivs_dict["du/dx"]) + params[1] * u + params[2] * derivs_dict["du/dx"] - params[3] * t
+    P = 4 # Four parameters are needed for optimizing
+    string_form_of_the_equation = "du/dt = c[0] * exp(du/dx) + c[1] * u + c[2] * du/dx - c[3] * t"
+    return right_side, string_form_of_the_equation, P
+```
+
+```python
+# Full function to constructing and evalating the equation:
+def loss_function(params, t, x, u, derivs_dict):
+    u_pred = equation_v1(t, x, u, derivs_dict, params)[0]
+    return np.mean((u_pred-derivs_dict["du/dt"])**2)
+
+def eval_metric(params, t, x, u, derivs_dict, left_side):
+    u_pred = equation_v1(t, x, u, derivs_dict, params)[0]
+    return np.mean(np.fabs(u_pred - derivs_dict[left_side]))
+
+def evaluate(data: dict) -> float:
+    """ Evaluate the constructed equation"""
+    inputs, derivs_dict = data['inputs'], data["derivs_dict"]
+    # Optimize equation skeleton parameters
+    loss_partial = lambda params: loss_function(params, *inputs, derivs_dict)
+    params_initial_guess = np.array([1.0]*P)
+    result = minimize(loss_partial, params_initial_guess, method='BFGS')
+    optimized_params = result.x
+    # Return evaluation score
+    score = eval_metric(optimized_params, *inputs, derivs_dict, left_side)
+    return score if not np.isnan(score) and not np.isinf(score) else None
+```

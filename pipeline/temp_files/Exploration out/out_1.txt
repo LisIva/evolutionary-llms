@@ -1,0 +1,9 @@
+```python
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    right_side = params[0] * derivs_dict["du/dx"] * u + params[1] * t * derivs_dict["du/dx"]
+    string_form_of_the_equation = f"du/dt = c[0] * du/dx * u + c[1] * t * du/dx"
+    len_of_params = 2  # Two parameters are needed for optimizing (c[0] and c[1])
+    return right_side, string_form_of_the_equation, len_of_params
+```
+
+The above function is a possible equation that might be suitable to the given data points and its construction takes into consideration a linear combination of the products of the derivative du/dx with u and t respectively. This function also ensures that the resulting equation depends on the derivative du/dx which is a requirement. Notably, this equation has not been seen in the exp_buffer and does not entirely replicate the patterns seen in the exp_buffer as it has different terms.

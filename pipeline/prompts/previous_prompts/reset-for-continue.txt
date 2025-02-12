@@ -1,7 +1,11 @@
-What is a possible function with the general equation form {full_form} that could be described with the set of points named points_set, that have the form of '{dots_order}'. Give an answer in the function equation_v1 constructing it in a way described by equation_v0.
+What is a possible function with the general equation form {full_form} that could be described with the set of points named points_set, that have the form of '{dots_order}' (note that u itself is a function of x and t)? Give an answer in the function equation_v1 constructing it in a way described by the example in the end.
 The dictionary exp_buffer stores previous attempts to find the equation evaluated with evaluate function. While generating equation_v1 look at the exp_buffer and use the scores presented there to make a new guess about the equation structure. The best score is 0.
+Keep in mind that there might be some inexplicit interactions between the input variables (for ex. du/dx * u^2). Thus, if you are certain about some variable being a part of the equation then you can put it into the equation. If you are uncertain about something be creative in exploring that uncertainty, so that you can find that inexplicit interaction.
+Also, if it seems like t or x are involved in the equation do not forget that u and its derivatives are dependent on them, and thus the involvement of t and x might be expressed through u or its derivatives.
+
 Note that although the general equation form is {full_form}, the resulting equation may take on simpler forms (BUT IT DOESN'T HAVE TO!), like {left_deriv} = F(t, du/dx).
 Make sure the suggested equation is dependent on at least one derivative, so in the provided case du/dx must be included.
+
 
 Requirements:
 1. First look at the exp_buffer and then suggest the equation, the string form of which is not already there!
@@ -37,35 +41,16 @@ def evaluate(data: dict) -> float:
 points_set =
 {points_set}
 exp_buffer = {{
-"du/dt = c[0] * t * du/dx + c[1] * u * d^3u/dx^3": 915,
-"du/dt = c[0] * t * du/dx + c[1] * u * d^2u/dx^2": 911,
-"du/dt = c[0] * t * du/dx + c[1]": 843,
-"du/dt = c[0] * du/dx": 843,
-"du/dt = c[0] * du/dx + c[1] * t * d^2u/dx^2": 836,
-"du/dt = c[0] * du/dx + c[1] * t * d^2u/dx^2 + c[2] * u * d^3u/dx^3": 796,
-"du/dt = c[0] * t + c[1] * x + c[2] * u + c[3] * du/dx + c[4] * d^2u/dx^2": 793,
-"du/dt = c[0] * x * du/dx + c[1] * t * d^2u/dx^2 + c[2] * u * du/dx": 784,
-"du/dt = c[0] * du/dx + c[1] * u": 779,
-"du/dt = c[0] * np.exp(-c[1]*t) * du/dx + c[2]*u": 774,
-"du/dt = c[0] * t * du/dx + c[1] * u * d^2u/dx^2 + c[2] * (du/dx)^2": 762,
-"du/dt = c[0] * du/dx + c[1] * d^2u/dx^2 + c[2] * x": 761,
-"du/dt = c[0] * du/dx + c[1] * t * d^3u/dx^3": 734,
-"du/dt = c[0] * t * du/dx + c[1] * x * du/dx + c[2] * u * d^2u/dx^2": 732,
-"du/dt = c[0] * ( du/dx + u ) + c[1] * u * ( t + x ) + c[2] * d^2u/dx^2 * (t^2 + x^2) + c[3] * t^3 + c[4] * x^3": 731,
-"du/dt = c[0] * du/dx + c[1] * u + c[2] * d^2u/dx^2": 723,
-"du/dt = c[0] * du/dx + c[1] * d^2u/dx^2 + c[2] * t * du/dx": 664,
-"du/dt = c[0] * t * du/dx + c[1] * x * d^2u/dx^2 + c[2] * (du/dx)**2": 651,
-"du/dt = c[0] * t + c[1] * du/dx + c[2] * d^3u/dx^3": 625,}}
+}}
 
 #/end of input data
 
-""" An example of desired output: """
-def equation_v0(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+# An example of desired output in the form of previously discovered equation:
+```python
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
     right_side = params[0] * derivs_dict["du/dx"]
-    string_form_of_the_equation = "{left_deriv} = c[0] * du/dx"
+    string_form_of_the_equation = "du/dt = c[0] * du/dx"
     len_of_params = 1
     return right_side, string_form_of_the_equation, len_of_params
 
-""" The function to complete: """
-def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
-    """Generate the code"""
+```

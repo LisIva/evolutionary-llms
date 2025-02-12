@@ -6,6 +6,9 @@ from pathlib import Path
 from promptconstructor.info_prompts import prompt_complete_inf
 
 PARENT_PATH = Path().absolute().parent
+
+if 'pipeline' in PARENT_PATH.parts:
+    PARENT_PATH = PARENT_PATH.parent
 # right_side = params[0] * u * derivs_dict["du/dx"] + params[1] * derivs_dict["du/dx"]
 # string_form_of_the_equation = "du/dt = c[0] * du/dx + c[1] * u * du/dx"
 
