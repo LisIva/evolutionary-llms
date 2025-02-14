@@ -1,0 +1,18 @@
+```python
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    right_side = params[0] * t**params[1] * derivs_dict["du/dx"] + params[2] * t * derivs_dict["du/dx"]
+    string_form_of_the_equation = "du/dt = c[0] * t^c[1] * du/dx + c[2] * t * du/dx"
+    len_of_params = 3
+    return right_side, string_form_of_the_equation, len_of_params
+
+"""
+Important notes:
+In our pursuit to accurately model the relationship in the points_set, we've noticed that the variable 't' has a significant influence on the differential equation's structure, specifically on the 'du/dt' term. It's been observed that 'du/dt' behaves in a manner that indicates an exponential relationship not only with 'du/dx' but also with 't' itself. This observation has led to the evolution of our equation formulation.
+
+We've also realized that incorporating 't' in a more dynamic way, such as through exponentiation, along with a linear term, can better capture the nuances in the data. This suggests that the rate of change of 'u' with respect to 't' is not constant but rather evolves over 't' and is influenced by the rate of change of 'u' with respect to 'x', 'du/dx'.
+
+The introduction of 't^c[1]' in the initial term of the equation reflects an exponential relationship over time, which could denote aspects such as exponential growth or decay. The additional term 't * du/dx' complements this, possibly accounting for a linear component's influence on the derivative 'du/dt'.
+
+Given this refined equation structure, the third equation parameter 'c[2]' serves to scale the influence of the linear time component on 'du/dt', allowing for greater flexibility in fitting the model to the data trends. This approach aligns with previous trials that indicated the significance of both non-linear and linear interactions of time in the equation.
+"""
+```

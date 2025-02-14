@@ -1,8 +1,19 @@
 ```python
 def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
-    right_side = params[0] * u * derivs_dict["du/dx"] + params[1] * u * derivs_dict["du/dx"]**2
-    string_form_of_the_equation = "du/dt = c[0] * u * du/dx + c[1] * u * (du/dx)**2"
+    right_side = params[0] * t**params[1] * derivs_dict["du/dx"]
+    string_form_of_the_equation = "du/dt = c[0] * t^c[1] * du/dx"
     len_of_params = 2
     return right_side, string_form_of_the_equation, len_of_params
+
+"""
+Important notes:
+Upon careful examination, it becomes evident that the derivative 'du/dt' changes not only with respect to 'du/dx'
+but also with respect to 't', suggesting that 't' plays a role in the rate of change.
+This observation supports the idea of including 't' in the equation formulation, as done in 'du/dt = c[0] * t^c[1] * du/dx'.
+Exponential growth or decay with respect to 't' and dependence on 'du/dx' is observed,
+indicating a relationship where the impact of 'du/dx' on the derivative 'du/dt' can vary with time.
+This relationship is captured in our equation, reflecting the trend seen in the data.
+Additionally, the inclusion of 't' to the power of 'c[1]' implies that the sensitivity to changes in 'du/dx' can accelerate or decelerate over time,
+making this equation a good candidate that intertwines the effects of 'du/dx' and 't' on the derivative 'du/dt'.
+"""
 ```
-This equation was chosen because it is a next step in complexity from expressions in the exp_buffer, adding a term dependent on u times the second power of du/dx, which wasn't previously used. This particular expression was chosen to examine any interactions between the second power of the derivative and the second variable u, and to see whether there is any dependency between u and its second derivative in relation to t.

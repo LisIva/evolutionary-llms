@@ -6,9 +6,10 @@ from tqdm import tqdm
 import sys
 import traceback
 
-MAX_ITER = 7
+MAX_ITER = 10
 DIR_NAME = 'burg'
-START_ITER = 2
+START_ITER = 1
+REFINE_POINT = 6
 
 DEBUG = False # True False
 PRINT_EXC = True
@@ -21,7 +22,7 @@ def perform_step(path, num, debug=False):
     else:
         response = get_response(prompt_path=path, num=num, dir_name=DIR_NAME, print_info=False)
     score, str_equation, params = piped_evaluator(response, DIR_NAME)
-    new_prompt, old_prompt = rebuild_prompt(str_equation, score, response, num=num)
+    new_prompt, old_prompt = rebuild_prompt(str_equation, score, response, num=num, path=path)
     return new_prompt, score, str_equation, params
 
 
@@ -59,8 +60,11 @@ if __name__ == '__main__':
                 print(traceback.format_exc())
                 if EXIT: sys.exit()
 
-    for num in tqdm(range(START_ITER, MAX_ITER), desc="LLM's progress"):
+    for num in tqdm(range(START_ITER, REFINE_POINT), desc="LLM's progress"):
         new_prompt, score, str_equation, params = step("prompts/continue-iter.txt", num, debug=DEBUG)
+
+    for num in tqdm(range(REFINE_POINT, MAX_ITER), desc="LLM's progress"):
+        new_prompt, score, str_equation, params = step("prompts/continue-iter-refinement.txt", num, debug=DEBUG)
 
     optimization_track1 = optimization_track
     print()

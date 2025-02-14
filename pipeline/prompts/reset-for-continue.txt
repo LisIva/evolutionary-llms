@@ -45,7 +45,7 @@ exp_buffer = {{
 
 #/end of input data
 
-# An example of desired output in the form of previously discovered equation:
+# An example of desired output:
 ```python
 def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
     right_side = params[0] * derivs_dict["du/dx"]

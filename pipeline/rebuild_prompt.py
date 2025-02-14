@@ -2,9 +2,10 @@ import re
 from extract_llm_responses import retrieve_notes, retrieve_example_response, compose_equation_v1_fun
 
 
-def extract_exp_buffer(path):
-    with open(path) as prompt_file:
-        content = prompt_file.read()
+def extract_exp_buffer(path, content=None):
+    if content is None:
+        with open(path) as prompt_file:
+            content = prompt_file.read()
     start_str = "exp_buffer = {{\n"
     start_pos = content.find(start_str) + len(start_str)
     end_pos = content.find("}}", start_pos, len(content))
@@ -51,7 +52,7 @@ def insert_equation(insert_eq_str, insert_val, dict_str):
 #     return begin_pos, end_pos
 
 
-def create_new_file(start_pos, end_pos, new_dict_str, response, continue_content, path, write_file=False):
+def create_new_file(start_pos, end_pos, new_dict_str, response, continue_content, path, write_file=False, num=0):
     new_notes = retrieve_notes(response)
     new_str_fun = compose_equation_v1_fun(response)
     old_notes = retrieve_notes(continue_content)
@@ -61,29 +62,45 @@ def create_new_file(start_pos, end_pos, new_dict_str, response, continue_content
     if len(new_notes) > 8:
         continue_content = continue_content.replace(old_notes, new_notes)
         continue_content = continue_content.replace(old_str_fun, new_str_fun)
+        continue_content = continue_content.replace("# An example of desired output:",
+                                                    "# An example of desired output in the form of "
+                                                    "previously discovered equation:")
 
     new_buff_file = continue_content[:start_pos] + new_dict_str + continue_content[end_pos:]
-    # start_ex_pos, end_ex_pos = find_new_example_pos(continue_content)
-    # new_buff_file = continue_content[:start_pos] + new_dict_str + continue_content[end_pos:start_ex_pos] \
-    #                 + new_ex_response + continue_content[end_ex_pos:]
+
+    if num == 0: path = "prompts/continue-iter.txt"
     if write_file:
         with open(path, 'w') as prompt:
             prompt.write(new_buff_file)
     return new_buff_file
 
 
+def retrieve_copy_exp_buff(next_path, copy_from, num):
+    start_pos, end_pos, dict_str, file_content = extract_exp_buffer(copy_from)
+    start_pos_next, end_pos_next, dict_str_next, file_content_next = extract_exp_buffer(next_path)
+    if start_pos_next == end_pos_next and num != 0:
+        new_file_content = file_content_next[:start_pos_next] + dict_str + file_content_next[start_pos_next:]
+        end_pos_next += len(dict_str)
+        return start_pos_next, end_pos_next, dict_str, new_file_content
+    elif num == 0:
+        return start_pos, end_pos, dict_str, file_content
+    else:
+        return start_pos_next, end_pos_next, dict_str_next, file_content_next
+
+
 def rebuild_prompt(insert_eq_str, value, response, path="prompts/continue-iter.txt", num=0):
     if len(insert_eq_str) > 250:
         raise Exception('The composed equation has an unaccepted structure: len(insert_eq_str) > 250')
-    start_pos, end_pos, dict_str, file_content = extract_exp_buffer(path)
+
+    start_pos, end_pos, dict_str, file_content = retrieve_copy_exp_buff(next_path=path,
+                                                                        copy_from="prompts/continue-iter.txt",
+                                                                        num=num)
     if is_duplicate(insert_eq_str, dict_str):
         print(f'LLM generated a duplicate on iter #{num}')
         return None, None
+
     new_dict_str = insert_equation(insert_eq_str, value, dict_str)
-
-
-    new_file = create_new_file(start_pos, end_pos, new_dict_str, response, file_content, path, write_file=True)
-    # new_file = create_new_buffer(start_pos, end_pos, new_dict_str, file_content, path)
+    new_file = create_new_file(start_pos, end_pos, new_dict_str, response, file_content, path, write_file=True, num=num)
     return new_file, file_content
 
 
