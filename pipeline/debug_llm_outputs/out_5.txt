@@ -1,7 +1,17 @@
 ```python
 def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
-    right_side = params[0] * derivs_dict["du/dx"] + params[1] * derivs_dict["du/dx"] * u**2
-    string_form_of_the_equation = "du/dt = c[0] * du/dx + c[1] * u^2 * du/dx"
+    right_side = params[0] * derivs_dict["du/dx"] + params[1] * derivs_dict["du/dt"] * derivs_dict["du/dx"]
+    string_form_of_the_equation = "du/dt = c[0] * du/dx + c[1] * du/dt * du/dx"
     len_of_params = 2
     return right_side, string_form_of_the_equation, len_of_params
+
+"""
+Important notes:
+
+A recent modeling attempt has introduced a novel relationship between du/dt, du/dx, and du/dt. The equation suggests that the rate of change of u over time (du/dt) is linearly dependent on both the change of u with respect to space (du/dx) and the product of du/dt and du/dx.
+
+This reveals a reciprocal influence within the system: the change in u over time not only depends on its spatial gradient but also on the concurrent rate of its temporal change. The du/dt * du/dx term suggests a complex interaction, where the dynamic response of the function u is modulated by concurrent changes in space and time.
+
+The parameters "c[0]" and "c[1]" define the strength and direction of these influences. "c[0]" quantifies the baseline effect of the spatial gradient on du/dt, whereas "c[1]" captures how the temporal change in u modulates this spatial influence.
+"""
 ```

@@ -11,6 +11,7 @@ Requirements:
 1. First look at the exp_buffer and then suggest the equation, the string form of which is not already there!
 2. Do not copy the equations from the exp_buffer!
 3. Only give a simplified version of the equation in string_form_of_the_equation: always open the brackets, for ex. instead of 'du/dt = c[0] * (1 + du/dx) * t' return 'du/dt = c[0] * t + c[1] * du/dx * t'.
+4. Higher order derivatives must be referenced as d^nu/dx^n or d^nu/dt^n, where n is an integer (for example, d^2u/dx^2 and NOT du^2/dx^2). Anything like du^n/dx^n refer to the multiplication of du/dx and should be written as (du/dx)^n or (du/dx)**n (same apply to du/dt).
 
 import numpy as np
 from scipy.optimize import minimize

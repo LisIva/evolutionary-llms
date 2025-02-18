@@ -6,10 +6,10 @@ from tqdm import tqdm
 import sys
 import traceback
 
-MAX_ITER = 10
-DIR_NAME = 'burg'
-START_ITER = 1
-REFINE_POINT = 6
+MAX_ITER = 8
+DIR_NAME = 'sindy-burg'
+START_ITER = 4
+REFINE_POINT = 4
 
 DEBUG = False # True False
 PRINT_EXC = True
@@ -60,10 +60,10 @@ if __name__ == '__main__':
                 print(traceback.format_exc())
                 if EXIT: sys.exit()
 
-    for num in tqdm(range(START_ITER, REFINE_POINT), desc="LLM's progress"):
+    for num in tqdm(range(START_ITER, min(REFINE_POINT, MAX_ITER)), desc="LLM's progress"):
         new_prompt, score, str_equation, params = step("prompts/continue-iter.txt", num, debug=DEBUG)
 
-    for num in tqdm(range(REFINE_POINT, MAX_ITER), desc="LLM's progress"):
+    for num in tqdm(range(min(REFINE_POINT, START_ITER), MAX_ITER), desc="LLM's progress"):
         new_prompt, score, str_equation, params = step("prompts/continue-iter-refinement.txt", num, debug=DEBUG)
 
     optimization_track1 = optimization_track

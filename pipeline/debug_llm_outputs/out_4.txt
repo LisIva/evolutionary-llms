@@ -1,11 +1,15 @@
 ```python
 def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
-    right_side = params[0] * derivs_dict["du/dx"] + params[1] * derivs_dict["du/dx"] * derivs_dict["du/dx"] + params[2] * u * derivs_dict["du/dx"]**2
-    string_form_of_the_equation = "du/dt = c[0] * du/dx + c[1] * du/dx^2 + c[2] * u * du/dx^2"
-    len_of_params = 3
+    right_side = params[0] * derivs_dict["du/dx"] + params[1] * derivs_dict["du/dx"] * t
+    string_form_of_the_equation = "du/dt = c[0] * du/dx + c[1] * du/dx * t"
+    len_of_params = 2
     return right_side, string_form_of_the_equation, len_of_params
+
+"""
+Important notes:
+
+The recent attempt at modeling with an equation involving a first-order derivative, du/dx, disclosed a linear dependency of du/dt not only on du/dx, but also on the product of du/dx and t. This indicates a ramp-up effect on the influence of du/dx as time evolves, t increasing in magnitude implies a stronger effect of du/dx on du/dt, which could be a consequence of an accelerating or decelerating mechanism within the system. 
+
+The equation suggests a linear relationship between du/dt and du/dx, with the rate of change also influenced linearly by the product of du/dx and t. The term "c[0] * du/dx" is akin to a baseline effect, therefore independent of time, whereas the second term "c[1] * du/dx * t" represents a time-evolving impact of du/dx. The parameters "c[0]" and "c[1]" likely describe the strength of these baseline and time-evolving influences, respectively.
+"""
 ```
-
-This function corresponds to the equation `du/dt = c[0] * du/dx + c[1] * (du/dx)^2 + c[2] * u * (du/dx)^2`, which is based on the patterns visible in the given data set, and has not been used yet according to the exp_buffer.
-
-In this function, right_side is calculated as a linear combination of derivatives du/dx, its square, and the product of u and du/dx squared, with parameters c[0], c[1], and c[2] respectively. This structure allows for potentially varying rates of change depending on position u, the derivative du/dx, and the square of that derivative. It both takes into account the immediate velocity of the function (du/dx) and its acceleration ((du/dx)^2), as well as allowing for a non-linear dependence on the current position u, represented by the term u*(du/dx)^2. By expanding the function to include not only du/dx but also its higher powers and its interaction with the function value u, this formulation provides a more complex model to potentially better match the provided data points. Additionally, it inverts the existing relationship in exp_buffer by using u instead of a constant in the interaction term with (du/dx)^2, showcasing the exploration of previously unseen interactions.
