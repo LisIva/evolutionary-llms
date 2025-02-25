@@ -1,6 +1,7 @@
-from evaluator import piped_evaluator, optimization_track
+from evaluator import piped_evaluator, eq_buffer
 from get_llm_response import get_response, get_debug_response
 from rebuild_prompt import rebuild_prompt
+from buffer_handler.eq_pruner import Pruner
 from clean_directories import clean_output_dir, reset_prompt_to_init
 from tqdm import tqdm
 import sys
@@ -8,10 +9,10 @@ import traceback
 
 MAX_ITER = 8
 DIR_NAME = 'sindy-burg'
-START_ITER = 4
-REFINE_POINT = 4
+START_ITER = 0
+REFINE_POINT = 100
 
-DEBUG = False # True False
+DEBUG = True # True False
 PRINT_EXC = True
 EXIT = True
 
@@ -21,9 +22,9 @@ def perform_step(path, num, debug=False):
         response = get_debug_response(num=num)
     else:
         response = get_response(prompt_path=path, num=num, dir_name=DIR_NAME, print_info=False)
-    score, str_equation, params = piped_evaluator(response, DIR_NAME)
-    new_prompt, old_prompt = rebuild_prompt(str_equation, score, response, num=num, path=path)
-    return new_prompt, score, str_equation, params
+    score, eq_string, params = piped_evaluator(response, DIR_NAME)
+    new_prompt, old_prompt = rebuild_prompt(eq_string, score, response, num=num, path=path)
+    return new_prompt, score, eq_string, params
 
 
 def step(path, num=0, debug=False):
@@ -63,10 +64,11 @@ if __name__ == '__main__':
     for num in tqdm(range(START_ITER, min(REFINE_POINT, MAX_ITER)), desc="LLM's progress"):
         new_prompt, score, str_equation, params = step("prompts/continue-iter.txt", num, debug=DEBUG)
 
-    for num in tqdm(range(min(REFINE_POINT, START_ITER), MAX_ITER), desc="LLM's progress"):
-        new_prompt, score, str_equation, params = step("prompts/continue-iter-refinement.txt", num, debug=DEBUG)
+    # for num in tqdm(range(min(REFINE_POINT, START_ITER), MAX_ITER), desc="LLM's progress"):
+    #     new_prompt, score, str_equation, params = step("prompts/continue-iter-refinement.txt", num, debug=DEBUG)
 
-    optimization_track1 = optimization_track
+    optimization_track1 = eq_buffer
+    pr = Pruner(eq_buffer.opt_track, 3)
     print()
 
 

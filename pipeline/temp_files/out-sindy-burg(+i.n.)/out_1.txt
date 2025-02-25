@@ -1,0 +1,9 @@
+```python
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    right_side = params[0] * derivs_dict['du/dx'] + params[1] * derivs_dict['du/dx']**2
+    string_form_of_the_equation = f"du/dt = c[0] * du/dx + c[1] * du^2/dx^2"
+    len_of_params = 2
+    return right_side, string_form_of_the_equation, len_of_params
+```
+
+In the solution provided, we explored a quadratic term involving 'du/dx', which was not previously examined. The equation simplified in the string form opens all the brackets and presents the terms as 'du^2/dx^2' to follow the instruction. Furthermore, it includes at least one derivative term as required. As a result of the guidelines, the equation is dependent on 'du/dx' and its square, which uncovers a possible inexplicit interaction between the derivatives.

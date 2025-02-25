@@ -5,7 +5,7 @@ Keep in mind that if you discard important info from the previous attempt, the f
 To summarize, you need to output 2 things - the code of equation_v1 AND the updated section of Important notes.
 
 Note that although the general equation form is {full_form}, the resulting equation may take on simpler forms (BUT IT DOESN'T HAVE TO!), like {left_deriv} = F(t, du/dx).
-Make sure the suggested equation is dependent on at least one derivative, so in the provided case du/dx must be included.
+Make sure the suggested equation is dependent on at least one derivative, (e.g, in case of du/dt = F(t, x, u, du/dx), du/dx must be included).
 
 Requirements:
 1. First look at the exp_buffer and then suggest the equation, the string form of which is not already there!

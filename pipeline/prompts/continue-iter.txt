@@ -5,13 +5,13 @@ Also, keep in mind, if it seems like t or x are involved in the equation do not 
 Start by exploring simpler structures and then gradually move on to more complicated ones IF you see the need to do so.
 
 Note that although the general equation form is {full_form}, the resulting equation may take on simpler forms (BUT IT DOESN'T HAVE TO!), like {left_deriv} = F(t, du/dx).
-Make sure the suggested equation is dependent on at least one derivative, so in the provided case du/dx must be included.
+Make sure the suggested equation is dependent on at least one derivative, (e.g, in case of du/dt = F(t, x, u, du/dx), du/dx must be included).
 
 Requirements:
 1. First look at the exp_buffer and then suggest the equation, the string form of which is not already there!
 2. Do not copy the equations from the exp_buffer!
 3. Only give a simplified version of the equation in string_form_of_the_equation: always open the brackets, for ex. instead of 'du/dt = c[0] * (1 + du/dx) * t' return 'du/dt = c[0] * t + c[1] * du/dx * t'.
-4. Higher order derivatives must be referenced as d^nu/dx^n or d^nu/dt^n, where n is an integer. Anything like du^n/dx^n refer to the multiplication of du/dx and should be written as (du/dx)^n or (du/dx)**n
+4. Higher order derivatives must be referenced as d^nu/dx^n or d^nu/dt^n, where n is an integer (for example, d^2u/dx^2 and NOT du^2/dx^2). Anything like du^n/dx^n refer to the multiplication of du/dx and should be written as (du/dx)^n or (du/dx)**n (same apply to du/dt).
 
 import numpy as np
 from scipy.optimize import minimize
@@ -42,19 +42,23 @@ def evaluate(data: dict) -> float:
 points_set =
 {points_set}
 exp_buffer = {{
+"du/dt = c[0] * du/dx + c[1] * du/dt * d^2u/dx^2": 542,
 "du/dt = c[0] * du/dx": 537,
 "du/dt = c[0] * du/dx + c[1] * du^2/dx^2": 532,
+"du/dt = c[0] * du/dx + c[1] * t * du/dx": 442,
 "du/dt = c[0] * du/dx + c[1] * u * du/dx": 438,
+"du/dt = c[0] * u * du/dx + c[2] * d^2u/dx^2": 38.9,
+"du/dt = c[0] * u * du/dx + c[2] * d^2u/dx^2 + c[3] * du/dx * t": 37.1,
 "du/dt = c[0] * u * du/dx + c[1] * du/dx + c[2] * d^2u/dx^2": 37.1,}}
 
 #/end of input data
 
-# An example of desired output:
+# An example of desired output in the form of previously discovered equation:
 ```python
 def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
-    right_side = params[0] * derivs_dict["du/dx"]
-    string_form_of_the_equation = "du/dt = c[0] * du/dx"
-    len_of_params = 1
+    right_side = params[0] * derivs_dict["du/dx"] + params[1] * t * derivs_dict["du/dx"]
+    string_form_of_the_equation = "du/dt = c[0] * du/dx + c[1] * t * du/dx"
+    len_of_params = 2
     return right_side, string_form_of_the_equation, len_of_params
 
 ```

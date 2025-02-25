@@ -5,7 +5,7 @@ Also, keep in mind, if it seems like t or x are involved in the equation do not 
 Start by exploring simpler structures and then gradually move on to more complicated ones IF you see the need to do so.
 
 Note that although the general equation form is {full_form}, the resulting equation may take on simpler forms (BUT IT DOESN'T HAVE TO!), like {left_deriv} = F(t, du/dx).
-Make sure the suggested equation is dependent on at least one derivative, so in the provided case du/dx must be included.
+Make sure the suggested equation is dependent on at least one derivative, (e.g, in case of du/dt = F(t, x, u, du/dx), du/dx must be included).
 
 Requirements:
 1. First look at the exp_buffer and then suggest the equation, the string form of which is not already there!

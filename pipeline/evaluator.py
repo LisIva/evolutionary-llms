@@ -7,12 +7,15 @@ from solution_complexity import eval_complexity
 from promptconstructor.array_to_txt import Data
 from promptconstructor.info_prompts import prompt_complete_inf
 from numpy import ndarray
-optimization_track = {}
+from buffer_handler.eq_buffer import EqBuffer
+
+eq_buffer = EqBuffer()
 
 
 def define_eq(response):
     eq1_fun_text = compose_equation_v1_fun(response)
     exec(eq1_fun_text, globals())
+    return eq1_fun_text
 
 
 def loss_function(params, t, x, u, derivs_dict, left_side):
@@ -49,60 +52,33 @@ def round_score(score):
 
 def piped_evaluator(response, dir_name='burg', resample_shape=(20, 20), debug_eval=False):
     if not debug_eval:
-        define_eq(response)
+        eq_code = define_eq(response)
     data_for_eval = Data(dir_name, resample_shape=resample_shape)
     data = data_for_eval.eval_data
     left_side = prompt_complete_inf[data_for_eval.dir_name]['left_deriv']
-    _, string_form_of_the_equation, P = equation_v1(*data['inputs'], data["derivs_dict"], np.zeros(100))
+    _, eq_text, P = equation_v1(*data['inputs'], data["derivs_dict"], np.zeros(100))
     score, loss, params = evaluate(data, P, left_side)
-
     try:
-        complexity_score = eval_complexity(string_form_of_the_equation)
+        complex_score = eval_complexity(eq_text)
     except Exception as e:
         print(f"\nException while finding a complexity score")
 
     u_t = data['derivs_dict'][left_side]
-
-    mean_ut_fabs = np.mean(np.fabs(u_t))
-    relat_mean = score / mean_ut_fabs * 1000
-    # mean_ut2 = np.mean(u_t * u_t)
-    # total_score = (loss / mean2 * 1000 + relat_mean) / 2
-    rounded_relat_score = round_score(relat_mean)
-
-    # rounded_tot_score = round_score(total_score)
-    optimization_track[string_form_of_the_equation] = (float(rounded_relat_score), complexity_score)
+    relat_score = score / np.mean(np.fabs(u_t)) * 1000
     if not debug_eval:
-        return rounded_relat_score, string_form_of_the_equation, params
-    else:
-        return score, string_form_of_the_equation, params, u_t
+        eq_buffer.push_record(eq_text, complex_score, relat_score, loss, eq_code)
+    return round_score(relat_score), eq_text, params
 
 
 # def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
-#     right_side = params[0] * derivs_dict["d^2u/dx^2"]
-#                  # + params[1] * np.cos(t) * np.sin(x) + params[2] * derivs_dict["d^3u/dx^3"]
+#     right_side = params[0] * derivs_dict["d^2u/dx^2"] + params[1] * derivs_dict[
+#         "du/dx"]
 #     string_form_of_the_equation = "du/dt = c[0] * t + c[1] * t * du/dx"
-#     len_of_params = 1
-#     return right_side, string_form_of_the_equation, len_of_params
-
-
-# def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
-#     right_side = params[0] * derivs_dict["d^2u/dx^2"]
-#                  # + params[1] * np.cos(t) * np.sin(x) + params[2] * derivs_dict["d^3u/dx^3"]
-#     string_form_of_the_equation = "du/dt = c[0] * t + c[1] * t * du/dx"
-#     len_of_params = 3
+#     len_of_params = 2
 #     return right_side, string_form_of_the_equation, len_of_params
 
 
 if __name__ == '__main__':
-    # Понять почему такой низкий скор у kdv
-    "du/dt = c[0] * du/dx + c[1]"
-    tot_score, string, params, u_t = piped_evaluator('', 'wave', debug_eval=True)
-    minim = np.abs(np.min(u_t))
-    maxim = np.abs(np.max(u_t))
-    mean = np.mean(np.fabs(u_t))
-    t1 = tot_score / minim * 1000
-    t2 = tot_score / maxim * 1000
-    t3 = tot_score / mean * 1000
-    # optimization_track_tripods[string] = (float(round_score(t1)), float(round_score(t2)), float(round_score(t3)))
-    # 229, 105, 835
+    tot_score, string, params = piped_evaluator('', 'sindy-burg', debug_eval=True)
+
     print()

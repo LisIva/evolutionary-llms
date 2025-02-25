@@ -1,0 +1,5 @@
+def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
+    right_side = (derivs_dict["du/dx"] * params[0] + derivs_dict["d^2u/dx^2"] * params[1])
+    string_form_of_the_equation = "d^2u/dt^2 = c[0] * du/dx + c[1] * d^2u/dx^2"
+    len_of_params = 2
+    return (right_side, string_form_of_the_equation, len_of_params)
