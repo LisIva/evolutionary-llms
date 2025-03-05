@@ -5,15 +5,17 @@ from pipeline.buffer_handler.knee_reorder import SortedDict
 
 
 class Pruner(object):
-    def __init__(self, opt_track, records_track, n_candidates, resample_shape=(20, 20)):
-        self.sorted_track = SortedDict(opt_track, sort_by=1)
-        self.records_track = records_track
+    def __init__(self, eq_buffer, n_candidates, evaluator):
+        self.sorted_candid_track = SortedDict(eq_buffer.opt_track, sort_by=1)
+        self.full_records_track = eq_buffer.full_records_track
+        self.full_opt_track = eq_buffer.full_opt_track
+        self.evaluator = evaluator
         self.enrich_track(n_candidates)
         print()
 
     def enrich_track(self, n_candidates):
-        candidates = self.sorted_track.get_top_n(n_candidates)
-        enriched_track = self.sorted_track.sorted_dict.copy()
+        candidates = self.sorted_candid_track.get_top_n(n_candidates)
+        enriched_track = self.full_opt_track.copy()
         print()
 
 
