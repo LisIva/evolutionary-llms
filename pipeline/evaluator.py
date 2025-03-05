@@ -2,14 +2,12 @@ from typing import Any
 import numpy as np
 from scipy.optimize import minimize
 from promptconstructor.array_to_txt import load_resample_burg_array
-from extract_llm_responses import compose_equation_v1_fun
+from extract_llm_response import compose_equation_v1_fun
 from solution_complexity import eval_complexity
 from promptconstructor.array_to_txt import Data
 from promptconstructor.info_prompts import prompt_complete_inf
 from numpy import ndarray
 from buffer_handler.eq_buffer import EqBuffer
-
-eq_buffer = EqBuffer()
 
 
 def define_eq(response):
@@ -50,24 +48,37 @@ def round_score(score):
     else: return np.round(score, 3)
 
 
-def piped_evaluator(response, dir_name='burg', resample_shape=(20, 20), debug_eval=False):
+def pruner_evaluator(eq_code, dir_name='burg', resample_shape=(20, 20)):
+    exec(eq_code, globals())
+    data_for_eval = Data(dir_name, resample_shape=resample_shape)
+    data = data_for_eval.eval_data
+    left_side = prompt_complete_inf[data_for_eval.dir_name]['left_deriv']
+    _, eq_str, P = equation_v1(*data['inputs'], data["derivs_dict"], np.zeros(100))
+    eval_error, loss, params = evaluate(data, P, left_side)
+    try:
+        complex_score = eval_complexity(eq_str)
+    except Exception as e:
+        print(f"\nException while finding a complexity score")
+
+
+def piped_evaluator(response, eq_buffer, dir_name='burg', resample_shape=(20, 20), debug_eval=False):
     if not debug_eval:
         eq_code = define_eq(response)
     data_for_eval = Data(dir_name, resample_shape=resample_shape)
     data = data_for_eval.eval_data
     left_side = prompt_complete_inf[data_for_eval.dir_name]['left_deriv']
-    _, eq_text, P = equation_v1(*data['inputs'], data["derivs_dict"], np.zeros(100))
-    score, loss, params = evaluate(data, P, left_side)
+    _, eq_str, P = equation_v1(*data['inputs'], data["derivs_dict"], np.zeros(100))
+    eval_error, loss, params = evaluate(data, P, left_side)
     try:
-        complex_score = eval_complexity(eq_text)
+        complex_score = eval_complexity(eq_str)
     except Exception as e:
         print(f"\nException while finding a complexity score")
 
     u_t = data['derivs_dict'][left_side]
-    relat_score = score / np.mean(np.fabs(u_t)) * 1000
+    relat_score = eval_error / np.mean(np.fabs(u_t)) * 1000
     if not debug_eval:
-        eq_buffer.push_record(eq_text, complex_score, relat_score, loss, eq_code)
-    return round_score(relat_score), eq_text, params
+        eq_buffer.push_record(eq_str, complex_score, relat_score, loss, eq_code)
+    return round_score(relat_score), eq_str, params
 
 
 # def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):

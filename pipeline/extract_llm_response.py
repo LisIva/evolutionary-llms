@@ -18,23 +18,34 @@ def find_eq_positions(response=None, path: str = 'out_0.txt', encoding: str = No
     return begin_pos, end_pos, response, undefined_begin
 
 
-def replace_wrong_coeffs(eq_text):
-    begin_pos = eq_text.find("string_form_of_the_equation = ")
+def get_code_part(eq_text, code_type='string_form_of_the_equation'):
+    begin_pos = eq_text.find(f"{code_type} = ")
     line_end_pos = eq_text[begin_pos:].find("\n") + begin_pos
-    str_old = eq_text[begin_pos + len("string_form_of_the_equation = "):line_end_pos]
+    return eq_text[begin_pos + len(f"{code_type} = "):line_end_pos]
 
-    str_new = str_old
-    start_replace_idx = str_new.find('{params')
-    if start_replace_idx == -1:
+
+# can't replace '-' when multiline are in right_side
+def replace_wrong_signs(eq_text, code_type='string_form_of_the_equation'):
+    param = {'string_form_of_the_equation': 'c', 'right_side': 'params'}
+
+    eq_origin = get_code_part(eq_text, code_type)
+    eq_str = eq_origin.replace(f'-{param[code_type]}[0]', f'{param[code_type]}[0]', 1)
+
+    sign_idx = eq_str.find(f'- {param[code_type]}[')
+    if sign_idx != -1:
+        eq_str = eq_str.replace(f'- {param[code_type]}[', f'+ {param[code_type]}[')
+    else: return eq_text
+    return eq_text.replace(eq_origin, eq_str)
+
+
+def replace_wrong_coeffs(eq_text):
+    str_old = get_code_part(eq_text, "string_form_of_the_equation")
+    if str_old.find('{') == -1:
         return eq_text
     else:
-        c_idx = 0
-        while str_new.find('{params') != -1:
-            param_end_pos = str_new[start_replace_idx:].find('}') + start_replace_idx
-            replace_str = str_new[start_replace_idx:param_end_pos+1]
-            str_new = str_new.replace(replace_str, f'c[{c_idx}]')
-            c_idx += 1
-            start_replace_idx = str_new.find('{params')
+        str_new = str_old.replace('{params', 'c')
+        str_new = str_new.replace("{", "")
+        str_new = str_new.replace("}", "")
         return eq_text.replace(str_old, str_new)
 
 
@@ -60,7 +71,10 @@ def compose_equation_v1_fun(response=None, path='out_0.txt'):
         eq1_fun_text = 'def equation_v1(t, x, u, derivs_dict, params):\n' + tabbed_context
     else:
         eq1_fun_text = context[begin_pos:end_pos_newstr+1]
+
     eq1_fun_text = replace_wrong_coeffs(eq1_fun_text)
+    eq1_fun_text = replace_wrong_signs(eq1_fun_text)
+    eq1_fun_text = replace_wrong_signs(eq1_fun_text, code_type='right_side')
     return eq1_fun_text
 
 
@@ -74,18 +88,18 @@ def retrieve_notes(response=None, path: str = 'out_0.txt', encoding: str = None)
     return notes
 
 
-def retrieve_example_response(response=None, path: str = 'out_0.txt', encoding: str = None):
-    if response is None:
-        with open(path, 'r', encoding=encoding) as myf:
-            response = myf.read()
-    begin_pos = response.rfind('```python')
-    return_pos = response[begin_pos:].rfind('```') + begin_pos
-    ex_response = response[begin_pos:return_pos]
-    return ex_response
+# def retrieve_example_response(response=None, path: str = 'out_0.txt', encoding: str = None):
+#     if response is None:
+#         with open(path, 'r', encoding=encoding) as myf:
+#             response = myf.read()
+#     begin_pos = response.rfind('```python')
+#     return_pos = response[begin_pos:].rfind('```') + begin_pos
+#     ex_response = response[begin_pos:return_pos]
+#     return ex_response
 
 
 if __name__ == "__main__":
-    # write_equation_v1_fun(path='out_0.txt')
-    retrieve_example_response()
+    compose_equation_v1_fun(path='out_0.txt')
+    # retrieve_example_response()
 
 
