@@ -5,7 +5,7 @@ from pipeline.buffer_handler.knee_reorder import SortedDict
 
 
 class Pruner(object):
-    def __init__(self, eq_buffer, n_candidates, evaluator):
+    def __init__(self, eq_buffer, evaluator, n_candidates):
         self.sorted_candid_track = SortedDict(eq_buffer.opt_track, sort_by=1)
         self.full_records_track = eq_buffer.full_records_track
         self.full_opt_track = eq_buffer.full_opt_track
