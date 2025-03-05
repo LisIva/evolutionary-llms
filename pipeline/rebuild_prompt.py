@@ -1,5 +1,5 @@
 import re
-from extract_llm_responses import retrieve_notes, retrieve_example_response, compose_equation_v1_fun
+from extract_llm_response import retrieve_notes, compose_equation_v1_fun
 
 
 def extract_exp_buffer(path, content=None):

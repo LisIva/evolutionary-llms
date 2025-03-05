@@ -18,6 +18,7 @@ class SortedDict(object):
     def __init__(self, dictionary, sort_by=0, reverse=False):
         self.tupled_dict = type(list(dictionary.values())[0]) is tuple
 
+        # sort_by: 0 - by complexity, 1 - by error
         if self.tupled_dict:
             self.sorted_dict = dict(sorted(dictionary.items(), key=lambda item: item[1][sort_by], reverse=reverse))
         else:
@@ -45,6 +46,9 @@ class SortedDict(object):
         n_candidates = int(np.round(percent * len(self.sorted_dict)))
         if top: return list(self.sorted_dict.items())[-n_candidates:]
         else: return list(self.sorted_dict.items())[:n_candidates]
+
+    def get_top_n(self, n_candidates):
+        return list(self.sorted_dict.items())[:n_candidates]
 
     def get_max_idx(self, candidates):
         max_idx = 0

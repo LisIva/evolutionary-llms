@@ -1,4 +1,5 @@
-from evaluator import piped_evaluator, eq_buffer
+from evaluator import piped_evaluator
+from buffer_handler.eq_buffer import EqBuffer
 from get_llm_response import get_response, get_debug_response
 from rebuild_prompt import rebuild_prompt
 from buffer_handler.eq_pruner import Pruner
@@ -16,13 +17,15 @@ DEBUG = True # True False
 PRINT_EXC = True
 EXIT = True
 
+resample_shape = (20, 20)
+eq_buffer = EqBuffer()
 
 def perform_step(path, num, debug=False):
     if debug:
         response = get_debug_response(num=num)
     else:
         response = get_response(prompt_path=path, num=num, dir_name=DIR_NAME, print_info=False)
-    score, eq_string, params = piped_evaluator(response, DIR_NAME)
+    score, eq_string, params = piped_evaluator(response, eq_buffer, DIR_NAME)
     new_prompt, old_prompt = rebuild_prompt(eq_string, score, response, num=num, path=path)
     return new_prompt, score, eq_string, params
 
@@ -47,6 +50,8 @@ def step_0(path="prompts/zero-iter.txt", debug=False):
 
 
 if __name__ == '__main__':
+
+
     if START_ITER == 0:
         while True:
             try:
@@ -67,8 +72,7 @@ if __name__ == '__main__':
     # for num in tqdm(range(min(REFINE_POINT, START_ITER), MAX_ITER), desc="LLM's progress"):
     #     new_prompt, score, str_equation, params = step("prompts/continue-iter-refinement.txt", num, debug=DEBUG)
 
-    optimization_track1 = eq_buffer
-    pr = Pruner(eq_buffer.opt_track, 3)
+    pruner = Pruner(eq_buffer.full_opt_track, eq_buffer.records_track, 4)
     print()
 
 
