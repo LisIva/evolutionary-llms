@@ -28,18 +28,19 @@ def one_stroke_rs_code(eq_text):
 
 
 class Equation(object):
-    def __init__(self, eq_str, eq_code, P, dir_name):
-        left_deriv = prompt_complete_inf[dir_name]['left_deriv']
+    def __init__(self, eq_str, eq_code, P, left_deriv):
         self.feq_str = f'{left_deriv} = {eq_str}'
         self.feq_code = sample_code(eq_code, self.feq_str, P)
+        self.P = P
 
 
 # не может перерабатывать уравнения, в которых c[..] названы иначе
 class SubEqSet(object):
     def __init__(self, parent_code, parent_key, dir_name):
-        self.dir_name = dir_name
-        if parent_key[:len('string_form_of_the_equation = ')] == "string_form_of_the_equation = ":
-            parent_key = parent_key[len('string_form_of_the_equation = '):]
+        self.left_deriv = prompt_complete_inf[dir_name]['left_deriv']
+        if parent_key[:len(f'{self.left_deriv} = ')] == f"{self.left_deriv} = ":
+            parent_key = parent_key[len(f'{self.left_deriv} = '):]
+
         self.parent_terms_str = strip(split_with_braces(parent_key))
 
         rs_code = one_stroke_rs_code(parent_code)
@@ -70,7 +71,7 @@ class SubEqSet(object):
     def form_subset(self):
         c_ids_all, params_ids_all, total_param_size = self.get_params_ids()
         comb_ids = self.get_sub_eq_ids()
-        eq_subset = {}
+        eq_subset = []
         if total_param_size < 10: # otherwise can't reorder the terms properly
             for terms_id in comb_ids:
                 # define elements of a new equation
@@ -82,8 +83,7 @@ class SubEqSet(object):
                 # rename the c[..] and params[..] by correct order and create an equation
                 coef_reorder = CoeffReorder(eq_str, eq_code, c_ids, params_ids, total_param_size)
                 eq_str, eq_code = coef_reorder.reorder_1digit()
-                eq = Equation(' + '.join(eq_str), ' + '.join(eq_code), len(eq_code), self.dir_name)
-                eq_subset[eq.feq_str] = eq.feq_code
+                eq_subset.append(Equation(' + '.join(eq_str), ' + '.join(eq_code), len(eq_code), self.left_deriv))
         else:
             print("Total number of params exceeds 10, the equation can't have a subset")
         return eq_subset

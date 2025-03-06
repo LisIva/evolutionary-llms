@@ -15,6 +15,7 @@ tokenization/imagenet_k600_vae.ckpt
 tokenization/imagenet_mit.ckpt
 tokenization/imagenet_ucf_vae.ckpt
 dummy-script.py
+chern.py
 
 Lib/
 Scripts/

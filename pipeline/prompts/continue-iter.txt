@@ -47,7 +47,7 @@ exp_buffer = {{
 "du/dt = c[0] * du/dx + c[1] * t * du/dx + c[2] * t * x": 460,
 "du/dt = c[0] * du/dx + c[1] * t * du/dx": 442,
 "du/dt = c[0] * du/dx + c[1] * u * du/dx": 438,
-"du/dt = c[0] * u * du/dx + c[2] * d^2u/dx^2": 38.9,
+"du/dt = c[0] * u * du/dx + c[1] * d^2u/dx^2": 38.9,
 "du/dt = c[0] * u * du/dx + c[1] * d^2u/dx^2 + c[2] * du/dx * t": 37.1,
 "du/dt = c[0] * u * du/dx + c[1] * du/dx + c[2] * d^2u/dx^2": 37.1,}}
 

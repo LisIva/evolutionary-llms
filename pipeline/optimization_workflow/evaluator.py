@@ -1,12 +1,9 @@
 import numpy as np
 from scipy.optimize import minimize
-from promptconstructor.array_to_txt import load_resample_burg_array
 from pipeline.extract_llm_response import compose_equation_v1_fun
-from pipeline.solution_complexity import eval_complexity
+from pipeline.optimization_workflow.complexity_evaluation import eval_complexity
 from promptconstructor.array_to_txt import Data
 from promptconstructor.info_prompts import prompt_complete_inf
-from numpy import ndarray
-from typing import Any
 
 
 def define_eq(response):
@@ -45,7 +42,7 @@ class Evaluator(object):
     def pruner_eval(self, eq_code, eq_str, P):
         exec(eq_code, globals())
         complex_score, relat_score, loss, params = self.get_eval_scores(eq_str, P)
-        return complex_score, relat_score
+        return complex_score, relat_score, loss
 
     def llm_response_eval(self, response, eq_buffer, debug_eval=False):
         if not debug_eval:

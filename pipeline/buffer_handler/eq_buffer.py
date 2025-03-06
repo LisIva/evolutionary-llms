@@ -1,5 +1,3 @@
-
-
 class Record(object):
     def __init__(self, key, eq_code, loss, complex_score, eval_score):
         self.key = key
@@ -19,10 +17,6 @@ class EqBuffer(object):
         self.full_opt_track = {}
         self.full_records_track = {}
 
-    def make_exp_buff(self):
-        # exp_buffer = {}
-        pass
-
     def push_record(self, key, complex_score, relat_score, loss, eq_code):
         self.full_opt_track[key] = (complex_score, relat_score)
         self.opt_track[key] = (complex_score, relat_score)
@@ -32,6 +26,3 @@ class EqBuffer(object):
     def push_subset_record(self, key, complex_score, relat_score, loss, eq_code):
         self.full_opt_track[key] = (complex_score, relat_score)
         self.full_records_track[key] = Record(key, eq_code, loss, complex_score, relat_score)
-
-    def reorder_by_knee(self):
-        pass

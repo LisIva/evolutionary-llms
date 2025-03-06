@@ -1,7 +1,7 @@
 ```python
 def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):
     right_side = params[0] * u * derivs_dict["du/dx"] + params[1] * derivs_dict["d^2u/dx^2"]
-    string_form_of_the_equation = "du/dt = c[0] * u * du/dx + c[2] * d^2u/dx^2"
+    string_form_of_the_equation = "du/dt = c[0] * u * du/dx + c[1] * d^2u/dx^2"
     len_of_params = 2
     return right_side, string_form_of_the_equation, len_of_params
 
