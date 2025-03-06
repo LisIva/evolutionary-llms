@@ -14,7 +14,7 @@ if __name__ == '__main__':
     opt_manager = OptManager(max_iter, start_iter, refine_point, dir_name, debug, print_exc, exit_code,
                              resample_shape=(20, 20), n_candidates=4)
     opt_manager.explore_solutions()
-    opt_manager.call_pruner()
+    pruned_track = opt_manager.call_pruner()
     print()
 
 
