@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
+import plotly.express as px
 
 
 def plot_track(opt_track, knee_scores):
@@ -10,7 +12,7 @@ def plot_track(opt_track, knee_scores):
         plt.scatter(x, y, s=200, edgecolors='k')
         plt.text(x + .03, y + .015, f'{name}: {mod}', fontsize=9)
 
-    plt.legend(opt_track.keys())
+    # plt.legend(opt_track.keys())
     plt.show()
 
 
@@ -60,13 +62,20 @@ class SortedDict(object):
 
 
 class Point(object):
-    def __init__(self, complex_score, eval_score, key):
-        self.xy = np.array([complex_score, eval_score])
+    def __init__(self, complex_score, eval_score, key, transform=True):
+        # without transform there is a high risk to have the best point with the eval_score of 400-500
+        self.xy = np.array([complex_score, self.transform(eval_score)]) if transform \
+                                                                        else np.array([complex_score, eval_score])
         self.name = key
-        self.projection_score = None
 
-    def set_projection_score(self, val):
-        self.projection_score = val
+    @staticmethod
+    def transform(x):
+        if x <= 200:
+            return x
+        elif 200 < x <= 400:
+            return 1.5 * x
+        else:
+            return 2 * x
 
 
 class Vector(object):
@@ -75,6 +84,54 @@ class Vector(object):
 
     def self_dot(self):
         return np.dot(self.coords, self.coords)
+
+
+class KneePlot(object):
+    def __init__(self, opt_track: dict, knee_scores: dict,
+                 projection_scores: SortedDict, end_point: Point, start_point: Point):
+        self.knee_scores = knee_scores
+        self.projection_scores = projection_scores.sorted_dict
+        self.end_point = end_point
+        self.start_point = start_point
+        self.opt_track = opt_track
+
+    def full_data_compile(self):
+        x_axis, y_axis, labels, colors = [], [], [], []
+        for item in self.opt_track.items():
+            x_axis.append(item[1][0])
+            y_axis.append(item[1][1])
+            labels.append(f"{item[0]}: {np.round(self.knee_scores[item[0]], 2)}; "
+                          f"{np.round(self.projection_scores.get(item[0], -1.), 2)}")
+            if self.start_point.name == item[0] or self.end_point.name == item[0]:
+                colors.append('red')
+            else: colors.append('blue')
+        data = {'complexity': x_axis, 'error': y_axis, 'info': labels, 'colors': colors}
+        return pd.DataFrame(data)
+
+    def project_data_compile(self):
+        def append_info(key):
+            x_axis.append(self.opt_track[key][0])
+            y_axis.append(self.opt_track[key][1])
+            labels.append(f"{key}: {np.round(self.knee_scores[key], 2)}; "
+                          f"{np.round(self.projection_scores.get(key, -1.), 2)}")
+
+        x_axis, y_axis, labels, colors = [], [], [], []
+        for key in self.projection_scores.keys():
+            append_info(key)
+            colors.append('blue')
+
+        for key in [self.start_point.name, self.end_point.name]:
+            append_info(key)
+            colors.append('red')
+
+        data = {'complexity': x_axis, 'error': y_axis, 'info': labels, 'colors': colors}
+        return pd.DataFrame(data)
+
+    def plot_opt_track(self, plot_type):
+        df = self.project_data_compile() if plot_type == 'projection' else self.full_data_compile()
+        fig = px.scatter(df, x='complexity', y='error', text='info', color='colors', size=[0.1] * len(df))
+        fig.update_traces(textposition='top center', marker=dict(size=14))
+        fig.show()
 
 
 class KneeReorder(object):
@@ -91,10 +148,14 @@ class KneeReorder(object):
         self.start_point = self.find_start_point()
         self.projection_scores = self.calc_projection_scores()
 
+    def knee_plot(self, plot_type='projection'):
+        kp = KneePlot(self.opt_track, self.knee_scores, self.projection_scores, self.end_point, self.start_point)
+        kp.plot_opt_track(plot_type)
+
     def find_knee_scores(self):
         knee_scores = {}
-        for item in opt_track.items():
-            knee_scores[item[0]] = self._by_complexity.max_val * (1 - item[1][1] / 1000) + 1.1 * item[1][0]
+        for item in self.opt_track.items():
+            knee_scores[item[0]] = self._by_complexity.max_val * (1 - item[1][1] / 1000) + item[1][0]
         return knee_scores
 
     def find_end_point(self):
@@ -108,12 +169,12 @@ class KneeReorder(object):
                 end_point_score = point_score
                 end_point_key = key
 
-        end_point = Point(self.opt_track[end_point_key][0], self.opt_track[end_point_key][1], end_point_key)
+        end_point = Point(self.opt_track[end_point_key][0], self.opt_track[end_point_key][1], end_point_key, False)
         return end_point
 
     def find_start_point(self):
         key = list(self._by_knee.sorted_dict.items())[0][0]
-        return Point(self.opt_track[key][0], self.opt_track[key][1], key)
+        return Point(self.opt_track[key][0], self.opt_track[key][1], key, False)
 
     def calc_projection_scores(self):
         v = Vector(self.start_point, self.end_point)
@@ -125,7 +186,7 @@ class KneeReorder(object):
             projection = np.dot(v.coords, vi.coords) / v.self_dot() * v.coords
             ri = vi.coords - projection
 
-            if ri[0] < 0. and ri[1] < 0.:
+            if ri[0] < 0. and ri[1] < 0.:# and item[1][1] < 400.:
                 projection_scores[item[0]] = np.sqrt(np.sum(ri * ri)) # max ~= 3.5-4.0
         # proj_scores_sorted = SortedDict(projection_scores, reverse=True)
         return SortedDict(projection_scores, reverse=True)
@@ -151,7 +212,8 @@ if __name__ == '__main__':
                   }
 
     kn = KneeReorder(opt_track)
-    plot_track(opt_track, kn.knee_scores)
+    kn.knee_plot()
+    # plot_track(opt_track, kn.knee_scores)
 
     print()
 

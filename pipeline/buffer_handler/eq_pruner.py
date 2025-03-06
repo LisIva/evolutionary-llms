@@ -1,22 +1,44 @@
 import numpy as np
 from pipeline.buffer_handler.sub_eq_builder import SubEqSet
-from pipeline.buffer_handler.knee_reorder import SortedDict
-# SortedDict
+from pipeline.buffer_handler.knee_reorder import SortedDict, KneeReorder, plot_track
 
 
 class Pruner(object):
-    def __init__(self, eq_buffer, evaluator, n_candidates):
+    def __init__(self, eq_buffer, evaluator, n_candidates, dir_name):
+        self.dir_name = dir_name
+
         self.sorted_candid_track = SortedDict(eq_buffer.opt_track, sort_by=1)
         self.full_records_track = eq_buffer.full_records_track
         self.full_opt_track = eq_buffer.full_opt_track
+
         self.evaluator = evaluator
-        self.enrich_track(n_candidates)
-        print()
+        self.eq_buffer = eq_buffer
+
+        self.enriched_track = self.enrich_track(n_candidates)
 
     def enrich_track(self, n_candidates):
         candidates = self.sorted_candid_track.get_top_n(n_candidates)
         enriched_track = self.full_opt_track.copy()
-        print()
+
+        for candidate in candidates:
+            parent_code = self.full_records_track[candidate[0]].eq_code
+            eq_subset = SubEqSet(parent_code, candidate[0], self.dir_name).subset
+            for sub_eq in eq_subset:
+                if sub_eq not in self.full_records_track.keys():
+                    complex_score, relat_score, loss = self.evaluator.pruner_eval(sub_eq.feq_code,
+                                                                                  sub_eq.feq_str, sub_eq.P)
+                    self.eq_buffer.push_subset_record(sub_eq.feq_str, complex_score, relat_score, loss, sub_eq.feq_code)
+                    enriched_track[sub_eq.feq_str] = (complex_score, relat_score)
+        return enriched_track
+
+    def cut_by_knee(self, n_alive=5):
+        k_reorder = KneeReorder(self.enriched_track)
+        pruned_track = k_reorder.projection_scores.sorted_dict
+        if len(pruned_track) < n_alive:
+            # call a fun similar to enrich_track
+            pass
+        # k_reorder.knee_plot(plot_type='projection')
+        return pruned_track
 
 
 eq_code = 'def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):\n    right_side = params[0] * u * derivs_dict["du/dx"] + params[1] * derivs_dict["du/dx"] + params[2] * derivs_dict["d^2u/dx^2"]\n    string_form_of_the_equation = "du/dt = c[0] * u * du/dx + c[1] * du/dx + c[2] * d^2u/dx^2"\n    len_of_params = 3\n    return right_side, string_form_of_the_equation, len_of_params'
