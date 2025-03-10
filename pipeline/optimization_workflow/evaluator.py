@@ -42,7 +42,7 @@ class Evaluator(object):
     def pruner_eval(self, eq_code, eq_str, P):
         exec(eq_code, globals())
         complex_score, relat_score, loss, params = self.get_eval_scores(eq_str, P)
-        return complex_score, relat_score, loss
+        return complex_score, relat_score, loss, params
 
     def llm_response_eval(self, response, eq_buffer, debug_eval=False):
         if not debug_eval:
@@ -50,7 +50,7 @@ class Evaluator(object):
         _, eq_str, P = equation_v1(*self.data['inputs'], self.data["derivs_dict"], np.zeros(100))
         complex_score, relat_score, loss, params = self.get_eval_scores(eq_str, P)
         if not debug_eval:
-            eq_buffer.push_record(eq_str, complex_score, relat_score, loss, eq_code)
+            eq_buffer.push_record(eq_str, complex_score, relat_score, loss, eq_code, params)
         return round_score(relat_score), eq_str, params
 
     def evaluate(self, P: int):

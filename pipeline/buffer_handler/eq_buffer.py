@@ -1,10 +1,11 @@
 class Record(object):
-    def __init__(self, key, eq_code, loss, complex_score, eval_score):
+    def __init__(self, key, eq_code, loss, complex_score, eval_score, params):
         self.key = key
         self.eq_code = eq_code
         self.loss = loss
         self.complex_score = complex_score
         self.eval_score = eval_score
+        self.params = params
 
 
 class EqBuffer(object):
@@ -17,12 +18,12 @@ class EqBuffer(object):
         self.full_opt_track = {}
         self.full_records_track = {}
 
-    def push_record(self, key, complex_score, relat_score, loss, eq_code):
+    def push_record(self, key, complex_score, relat_score, loss, eq_code, params):
         self.full_opt_track[key] = (complex_score, relat_score)
         self.opt_track[key] = (complex_score, relat_score)
-        self.records_track[key] = Record(key, eq_code, loss, complex_score, relat_score)
-        self.full_records_track[key] = Record(key, eq_code, loss, complex_score, relat_score)
+        self.records_track[key] = Record(key, eq_code, loss, complex_score, relat_score, params)
+        self.full_records_track[key] = Record(key, eq_code, loss, complex_score, relat_score, params)
 
-    def push_subset_record(self, key, complex_score, relat_score, loss, eq_code):
+    def push_subset_record(self, key, complex_score, relat_score, loss, eq_code, params):
         self.full_opt_track[key] = (complex_score, relat_score)
-        self.full_records_track[key] = Record(key, eq_code, loss, complex_score, relat_score)
+        self.full_records_track[key] = Record(key, eq_code, loss, complex_score, relat_score, params)
