@@ -2,6 +2,7 @@ import itertools
 # from pipeline.extract_llm_response import get_code_part
 import re
 from promptconstructor.info_prompts import prompt_complete_inf
+from pipeline.buffer_handler.code_parser import strip, split_with_braces, one_stroke_rs_code
 
 
 def sample_code(rs_code, eq_str, P):
@@ -10,21 +11,6 @@ def sample_code(rs_code, eq_str, P):
                f'\n    right_side = {rs_code}' \
                f'\n    string_form_of_the_equation = "{eq_str}"\n    len_of_params = {P}' \
                f'\n    return right_side, string_form_of_the_equation, len_of_params'
-
-
-def one_stroke_rs_code(eq_text):
-    begin_pos = eq_text.find("right_side = ")
-    eq_text = eq_text[begin_pos:]
-
-    line_end_pos = eq_text.find("\n")
-    # clean all redundant whitespaces ('\\', '\n', multiple ' '), return single-stroke format
-    if eq_text[line_end_pos-1] == '\\':
-        while eq_text[line_end_pos-1] == '\\':
-            eq_text = eq_text[:line_end_pos-1] + eq_text[line_end_pos:]
-            line_end_pos = eq_text[line_end_pos+1:].find("\n") + line_end_pos + 1
-        rs_code = eq_text[len("right_side = "):line_end_pos]
-        return re.sub('\s{2,}', ' ', rs_code)
-    return eq_text[len("right_side = "):line_end_pos]
 
 
 class Equation(object):
@@ -119,37 +105,6 @@ class CoeffReorder(object):
     #             self.rename_pos(i, idx, c_id-adhere_pos, param_id-adhere_pos, c_end, param_end)
     #             adhere_pos += c_end - 2 - len(str(idx))
     #             idx += 1
-
-
-def strip(code_part_ls):
-    new_code_part_ls = []
-    for term in code_part_ls:
-        new_code_part_ls.append(term.strip())
-    return new_code_part_ls
-
-
-def split_with_braces(code_part):
-    '''
-    :param code_str: right_side | eq_str variable in str format
-    :return: list of str; splits the right_side string by '+', but only leaves the terms of the highest (braces) level
-    '''
-    terms = code_part.split('+')
-    open_braces = terms[0].count('(') - terms[0].count(')')
-    braces_exist = terms[0].count('(') > 0
-    if open_braces != 0:
-        i = 1
-        while i < len(terms):
-            term_br1 = terms[i].count('(')
-            term_br2 = terms[i].count(')')
-            if open_braces > 0:
-                terms[i-1] += '+' + terms[i]
-                terms.pop(i)
-                i -= 1
-            open_braces = open_braces + term_br1 - term_br2
-            i += 1
-    if braces_exist and len(terms) == 1:
-        return split_with_braces(code_part[1:-1])
-    return terms
 
 
 # def get_char_idxs(string, char):
