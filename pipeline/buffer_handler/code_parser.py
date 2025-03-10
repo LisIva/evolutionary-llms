@@ -1,6 +1,6 @@
 import re
 from promptconstructor.info_prompts import prompt_complete_inf
-
+from sympy import expand, sympify
 
 def one_stroke_rs_code(eq_text):
     begin_pos = eq_text.find("right_side = ")
@@ -97,28 +97,85 @@ class RSExtractor(object):
         return self.cut_text[len("right_side="):line_pos]
 
 
+class AssociativeBraces(object):
+    def __init__(self, eq_code, brace_pairs):
+        self.eq_code = eq_code
+        self.pairs = brace_pairs
+
+    def __check_start(self, s):
+        if s-1 > 0 and (self.eq_code[s-1] == '+' or self.eq_code[s-1] == '('):
+                return True
+        elif s == 0: return True
+        return False
+
+    def __check_end(self, e):
+        if e+1 < len(self.eq_code) and (self.eq_code[e+1] == '+' or self.eq_code[e+1] == ')'):
+            return True
+        elif e == len(self.eq_code) - 1:
+            return True
+        return False
+
+    def open_braces(self):
+        i = 0
+        while i < len(self.pairs):
+            if self.__check_start(self.pairs[i][0]) and self.__check_end(self.pairs[i][1]):
+                self.__remove_braces(i)
+            else:
+                i += 1
+        return self.eq_code, self.pairs
+
+    def __subtract_value(self, number, i):
+        if number < self.pairs[i][0]:
+            return 0
+        elif number > self.pairs[i][1]:
+            return 2
+        else:
+            return 1
+
+    def __update_pairs(self, i):
+        indexes = [j for j in range(len(self.pairs)) if j != i]
+        for j in indexes:
+            self.pairs[j] = (self.pairs[j][0] - self.__subtract_value(self.pairs[j][0], i),
+                             self.pairs[j][1] - self.__subtract_value(self.pairs[j][1], i))
+
+    def __remove_braces(self, i):
+        self.eq_code = self.eq_code[:self.pairs[i][0]] + self.eq_code[self.pairs[i][0] + 1:]
+        self.__update_pairs(i)
+
+        end_idx = self.pairs[i][1] - 1
+        self.eq_code = self.eq_code[:end_idx] + self.eq_code[end_idx + 1:]
+        self.pairs.pop(i)
+
+
 class BracesHandler(object):
     def __init__(self, eq_code):
         self.eq_code = eq_code
-        self.b_starts, self.b_ends = self.find_braces()
-        pairs = self.find_pairs()
+        self.pairs, sort_len_pairs = self.find_pairs()
+
+        associative_braces = AssociativeBraces(eq_code, self.pairs)
+        self.eq_code, self.pairs = associative_braces.open_braces()
+        self.pairs1, sort_len_pairs1 = self.find_pairs()
+        print()
 
     def find_braces(self):
         starts = [match.start() for match in re.finditer(r'[(]', self.eq_code)]
         ends = [match.start() for match in re.finditer(r'[)]', self.eq_code)]
         return starts[::-1], ends
-    def __find_pair(self, start):
-        for e in self.b_ends:
-            if start - e < 0:
-                return e
 
     def find_pairs(self):
+        def find_pair(start, ends):
+            for e in ends:
+                if start - e < 0:
+                    return e
+
+        b_starts, b_ends = self.find_braces()
         b_pairs = []
-        for s in self.b_starts:
-            e = self.__find_pair(s)
+        for s in b_starts:
+            e = find_pair(s, b_ends)
             b_pairs.append((s, e))
-            self.b_ends.remove(e)
-        return b_pairs
+            b_ends.remove(e)
+        sorted_pairs = sorted(b_pairs, key=lambda x: x[1] - x[0], reverse=True)
+        return b_pairs[::-1], sorted_pairs
 
 
 # class BracesHandler(object):
@@ -202,9 +259,13 @@ if __name__ == '__main__':
     rs3 = '    right_side = params[0] * derivs_dict["du/dx"] ** 3 + params[1] * derivs_dict["du/dx"] ** 2\n    return right_side'
     rs4 = 'right_side = params[0] * derivs_dict["du/dx"] ** 3 + ((params[1] * derivs_dict["du/dx"] ** 2 * np.cos(params[2] * u +1)) * x**2) * u +params[3] * derivs_dict["du/dt"] * (t**2 + 2)\n    return right_side'
     rs5 = 'right_side = ((с[0]*du/dx + с[1]*u+1) + ((с[0]*du/dx&2*np.cos(с[1]*u+1))*x&2)*u)\n    return right_side'
+    rs6 = 'right_side = ((с[0]*du/dx + с[1]*u+1) + ((с[0]*du/dx&2*np.cos((с[1]*u+1) + 6*u))*x&2)*u)\n    return right_side'
 
-    # right_side += params[2] * t * (u ** 2) * derivs_dict["du/dx"]
-    # right_side += params[3] * u * derivs_dict["du/dx"]
-    cp = CodeParser(rs5)
+    cp = CodeParser(rs6)
+
+    original_str = "(c[0] * u - (((c[1] * du_dx ** 2 + 1) * (c[2] * du_dt + 2)) * x ** 2) * u + t ** 2) + cos(x + 1) * x**5"
+    modified_str = original_str.replace("c[0]", "c0").replace("c[1]", "c1").replace("c[2]", "c2")
+    expr = sympify(modified_str)
+    expanded_expr = expand(expr)
     print()
 
