@@ -206,13 +206,13 @@ if __name__ == '__main__':
                   '430.0; 2.25': (2.25, 430.0),
                   '950.0: 0.4': (0.4, 950.0),
                   '700.0: 0.4': (0.4, 700.0),
-                  'start_extr': (0.25, 1000.0),
-                  'elbow_extr': (0.25, 1.0),
-                  'end_extr': (3.7, 10.0)
+                  # 'start_extr': (0.25, 1000.0),
+                  # 'elbow_extr': (0.25, 1.0),
+                  # 'end_extr': (3.7, 10.0)
                   }
 
     kn = KneeReorder(opt_track)
-    kn.knee_plot()
+    kn.knee_plot(plot_type='projection')
     # plot_track(opt_track, kn.knee_scores)
 
     print()
