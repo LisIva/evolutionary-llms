@@ -4,48 +4,48 @@ import numpy as np
 from sympy import expand, sympify
 
 
-def one_stroke_rs_code(eq_text):
-    begin_pos = eq_text.find("right_side = ")
-    eq_text = eq_text[begin_pos:]
-
-    line_end_pos = eq_text.find("\n")
-    # clean all redundant whitespaces ('\\', '\n', multiple ' '), return single-stroke format
-    if eq_text[line_end_pos-1] == '\\':
-        while eq_text[line_end_pos-1] == '\\':
-            eq_text = eq_text[:line_end_pos-1] + eq_text[line_end_pos:]
-            line_end_pos = eq_text[line_end_pos+1:].find("\n") + line_end_pos + 1
-        rs_code = eq_text[len("right_side = "):line_end_pos]
-        return re.sub('\s{2,}', ' ', rs_code)
-    return eq_text[len("right_side = "):line_end_pos]
+def strip(code_piece_ls):
+    new_code_piece_ls = []
+    for term in code_piece_ls:
+        new_code_piece_ls.append(term.strip())
+    return new_code_piece_ls
 
 
-def split_with_braces(code_part):
-    '''
-    :param code_str: right_side | eq_str variable in str format
-    :return: list of str; splits the right_side string by '+', but only leaves the terms of the highest (braces) level
-    '''
-    terms = code_part.split('+')
-    open_braces = terms[0].count('(') - terms[0].count(')')
-    i = 1
-    while i < len(terms):
-        term_br1 = terms[i].count('(')
-        term_br2 = terms[i].count(')')
-        if open_braces > 0:
-            terms[i-1] += '+' + terms[i]
-            terms.pop(i)
-            i -= 1
-        open_braces = open_braces + term_br1 - term_br2
-        i += 1
-    if terms[0].count('(') > 0 and len(terms) == 1:
-        return split_with_braces(code_part[1:-1])
-    return terms
+class EqSplitter(object):
+    def __init__(self, code_piece):
+        self.code_piece = code_piece
+        self.terms = self.split_with_braces()
 
+    def get_terms(self):
+        return self.terms
 
-def strip(code_part_ls):
-    new_code_part_ls = []
-    for term in code_part_ls:
-        new_code_part_ls.append(term.strip())
-    return new_code_part_ls
+    def split_with_braces(self):
+        '''
+        :param code_str: right_side | eq_str variable in str format
+        :return: list of str; splits the right_side string by '+', but only leaves the terms of the highest (braces) level
+        '''
+        terms = self.code_piece.split('+')
+        open_braces = terms[0].count('(') - terms[0].count(')')
+        i = 1
+        while i < len(terms):
+            term_br1 = terms[i].count('(')
+            term_br2 = terms[i].count(')')
+            if open_braces > 0:
+                terms[i - 1] += '+' + terms[i]
+                terms.pop(i)
+                i -= 1
+            open_braces = open_braces + term_br1 - term_br2
+            i += 1
+        return terms
+
+    def get_pretty_terms(self):
+        for i, term in enumerate(self.terms):
+            tokens = term.split('*')
+            self.terms[i] = ' * '.join(tokens)
+
+            tokens = term.split('+')
+            self.terms[i] = ' + '.join(tokens)
+        return self.terms
 
 
 class RSVarsFixer(object):
@@ -158,21 +158,43 @@ class RSExtractor(object):
         return self.cut_text[len("right_side="):line_pos]
 
 
+class EqKeyReformer(object):
+    def __init__(self, eq_key, P=1):
+        # the ',' has no problem in itself, but subeq_set won't be able to work with it
+        self.eq_key = eq_key.replace(' ', '')
+
+        if self.eq_key.find(',') != -1:
+            self.eq_key = self.eq_key[:self.eq_key.find(',')]
+
+        if not self.has_correct_params():
+            if P == 1:
+                self.eq_key = self.fix_one_param()
+
+        if not self.has_correct_params():
+            raise Exception('Could not fix params in eq_key variable')
+
+    def has_correct_params(self):
+        return True if self.eq_key.find('c[') != -1 else False
+
+    def fix_one_param(self):
+        return self.eq_key.replace('c*', 'c[0]*').replace('k*', 'c[0]*')
+
+
 class AssociativeBraces(object):
-    def __init__(self, rs_code, brace_pairs):
-        self.rs_code = rs_code
+    def __init__(self, code_piece, brace_pairs):
+        self.code_piece = code_piece
         self.pairs = brace_pairs
 
     def __check_start(self, s):
-        if s-1 > 0 and (self.rs_code[s-1] == '+' or self.rs_code[s-1] == '('):
+        if s-1 > 0 and (self.code_piece[s-1] == '+' or self.code_piece[s-1] == '('):
                 return True
         elif s == 0: return True
         return False
 
     def __check_end(self, e):
-        if e+1 < len(self.rs_code) and (self.rs_code[e+1] == '+' or self.rs_code[e+1] == ')'):
+        if e+1 < len(self.code_piece) and (self.code_piece[e+1] == '+' or self.code_piece[e+1] == ')'):
             return True
-        elif e == len(self.rs_code) - 1:
+        elif e == len(self.code_piece) - 1:
             return True
         return False
 
@@ -183,7 +205,7 @@ class AssociativeBraces(object):
                 self.__remove_braces(i)
             else:
                 i += 1
-        return self.rs_code, self.pairs
+        return self.code_piece, self.pairs
 
     def __subtract_value(self, number, i):
         if number < self.pairs[i][0]:
@@ -200,25 +222,29 @@ class AssociativeBraces(object):
                              self.pairs[j][1] - self.__subtract_value(self.pairs[j][1], i))
 
     def __remove_braces(self, i):
-        self.rs_code = self.rs_code[:self.pairs[i][0]] + self.rs_code[self.pairs[i][0] + 1:]
+        self.code_piece = self.code_piece[:self.pairs[i][0]] + self.code_piece[self.pairs[i][0] + 1:]
         self.__update_pairs(i)
 
         end_idx = self.pairs[i][1] - 1
-        self.rs_code = self.rs_code[:end_idx] + self.rs_code[end_idx + 1:]
+        self.code_piece = self.code_piece[:end_idx] + self.code_piece[end_idx + 1:]
         self.pairs.pop(i)
 
 
-class ABracesHandler(object):
-    def __init__(self, rs_code):
-        self.rs_code = rs_code
+class AssociativeBracesHandler(object):
+    def __init__(self, eq_code_piece):
+        self.eq_code_piece = eq_code_piece
         self.pairs, sort_len_pairs = self.find_pairs()
 
-        associative_braces = AssociativeBraces(rs_code, self.pairs)
-        self.rs_code, self.pairs = associative_braces.open_braces()
+    def open_braces(self):
+        if len(self.pairs) != 0:
+            associative_braces = AssociativeBraces(self.eq_code_piece, self.pairs)
+            return associative_braces.open_braces()
+        else:
+            return self.eq_code_piece, []
 
     def find_braces(self):
-        starts = [match.start() for match in re.finditer(r'[(]', self.rs_code)]
-        ends = [match.start() for match in re.finditer(r'[)]', self.rs_code)]
+        starts = [match.start() for match in re.finditer(r'[(]', self.eq_code_piece)]
+        ends = [match.start() for match in re.finditer(r'[)]', self.eq_code_piece)]
         return starts[::-1], ends
 
     def find_pairs(self):
@@ -281,7 +307,7 @@ class CodeParser(object):
     def __init__(self, eq_text, params):
         self.eq_text = eq_text
 
-        rs_code = RSExtractor(eq_text).rs_code
+        rs_code = RSExtractor(eq_text, 6).rs_code
         sym_converter = SympyConverter(rs_code, params)
 
         self.rs_code = sym_converter.rs_code
@@ -291,6 +317,8 @@ class CodeParser(object):
 # проверить все ли в порядке с edge case - т.к. сейчас парсер будет впихнут в конец оптимизации,
 # т.е. в def eq должно быть ок для evaluator
 if __name__ == '__main__':
+    string_form_of_the_equation = "du/dt = k * du/dx , k = c[0]"
+    eqk = EqKeyReformer(string_form_of_the_equation, 1).eq_key
     pop_track = {'du/dt = c[0] * du/dx + c[1] * t * du/dx + c[2] * t * x': (1.6, 460.5686610664196), 'du/dt = c[0] * du/dx + c[1] * u + c[2] * d^2u/dx^2': (1.45, 484.1114426561667), 'du/dt = c[0] * du/dx + c[1] * u * du/dx': (1.2, 438.94292729549943), 'du/dt = c[0] * u * du/dx + c[1] * du/dx + c[2] * d^2u/dx^2': (1.95, 37.14800565887713), 'du/dt = c[0] * u * du/dx + c[1] * d^2u/dx^2': (1.45, 38.90635312678824), 'du/dt = c[0] * u * du/dx + c[1] * d^2u/dx^2 + c[2] * du/dx * t': (2.15, 37.057907826954576), 'du/dt = c[0] * du/dx + c[1] * du/dt * d^2u/dx^2': (1.75, 542.9853705131861), 'du/dt = c[0] * du/dx + c[1] * t * du/dx': (1.2, 442.49077370655203)}
     rs11 = '    right_side = (params[0] * derivs_dict["du/dx"] ** 3\n    right_side += (params[1] * derivs_dict["du/dx"] ** 2 * np.cos(params[2] * u +1))\n    right_side += params[3] * derivs_dict["du/dt"] * t**2)\n    return right_side'
     rs12 = '    right_side = params[0] * derivs_dict["du/dx"] ** 3\n    right_side = right_side + params[1] * derivs_dict["du/dx"] ** 2\n    return right_side'

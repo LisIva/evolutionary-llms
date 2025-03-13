@@ -2,8 +2,8 @@ import itertools
 # from pipeline.extract_llm_response import get_code_part
 import re
 from promptconstructor.info_prompts import prompt_complete_inf
-from pipeline.buffer_handler.code_parser import strip, split_with_braces, one_stroke_rs_code
-from pipeline.buffer_handler.code_parser import ABracesHandler
+from pipeline.buffer_handler.code_parser import EqSplitter, EqKeyReformer
+from pipeline.buffer_handler.code_parser import AssociativeBracesHandler
 
 
 def sample_code(rs_code, eq_str, P):
@@ -24,16 +24,18 @@ class Equation(object):
 # не может перерабатывать уравнения, в которых c[..] названы иначе
 class SubEqSet(object):
     def __init__(self, parent_code, parent_key, dir_name, P):
+        parent_key = EqKeyReformer(parent_key, P).eq_key
 
         self.left_deriv = prompt_complete_inf[dir_name]['left_deriv']
-        if parent_key[:len(f'{self.left_deriv} = ')] == f"{self.left_deriv} = ":
-            parent_key = parent_key[len(f'{self.left_deriv} = '):]
+        if parent_key[:len(f'{self.left_deriv}=')] == f"{self.left_deriv}=":
+            parent_key = parent_key[len(f'{self.left_deriv}='):]
+
+        parent_key, _ = AssociativeBracesHandler(parent_key).open_braces()
+        parent_code, _ = AssociativeBracesHandler(parent_code).open_braces()
 
         if P != 1:
-            self.parent_terms_str = strip(split_with_braces(parent_key))
-
-            rs_code = one_stroke_rs_code(parent_code)
-            self.parent_terms_code = strip(split_with_braces(rs_code))
+            self.parent_terms_str = EqSplitter(parent_key).get_pretty_terms()
+            self.parent_terms_code = EqSplitter(parent_code).get_terms()
             self.subset = self.form_subset()
         else:
             self.subset = [Equation(parent_key, parent_code, P, self.left_deriv), ]
