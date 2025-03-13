@@ -1,6 +1,6 @@
 import re
 from promptconstructor.info_prompts import prompt_complete_inf
-from pipeline.buffer_handler.sub_eq_builder import one_stroke_rs_code, strip, split_with_braces
+# from pipeline.buffer_handler.sub_eq_builder import one_stroke_rs_code, strip, split_with_braces
 
 
 class Individ(object):
@@ -19,7 +19,8 @@ class Translator(object):
 
     def some(self):
         for sol_key in self.populat_track.keys():
-            sol_terms = strip(split_with_braces(sol_key))
+            # sol_terms = strip(split_with_braces(sol_key))
+            pass
             # вместо c[..] подставить реальные коэффы из record_track
 
 

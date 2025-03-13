@@ -3,6 +3,7 @@ import itertools
 import re
 from promptconstructor.info_prompts import prompt_complete_inf
 from pipeline.buffer_handler.code_parser import strip, split_with_braces, one_stroke_rs_code
+from pipeline.buffer_handler.code_parser import ABracesHandler
 
 
 def sample_code(rs_code, eq_str, P):
@@ -22,29 +23,35 @@ class Equation(object):
 
 # не может перерабатывать уравнения, в которых c[..] названы иначе
 class SubEqSet(object):
-    def __init__(self, parent_code, parent_key, dir_name):
+    def __init__(self, parent_code, parent_key, dir_name, P):
+
         self.left_deriv = prompt_complete_inf[dir_name]['left_deriv']
         if parent_key[:len(f'{self.left_deriv} = ')] == f"{self.left_deriv} = ":
             parent_key = parent_key[len(f'{self.left_deriv} = '):]
 
-        self.parent_terms_str = strip(split_with_braces(parent_key))
+        if P != 1:
+            self.parent_terms_str = strip(split_with_braces(parent_key))
 
-        rs_code = one_stroke_rs_code(parent_code)
-        self.parent_terms_code = strip(split_with_braces(rs_code))
-        self.subset = self.form_subset()
+            rs_code = one_stroke_rs_code(parent_code)
+            self.parent_terms_code = strip(split_with_braces(rs_code))
+            self.subset = self.form_subset()
+        else:
+            self.subset = [Equation(parent_key, parent_code, P, self.left_deriv), ]
 
     def get_params_ids(self):
         c_ids = []
         params_ids = []
-        total_num = 0
+        total_num_c, total_num_p = 0, 0
         for term_str, term_code in zip(self.parent_terms_str, self.parent_terms_code):
             c_matches = re.finditer(re.escape('c['), term_str)
             param_matches = re.finditer(re.escape('params['), term_code)
             params_ids.append([match.start() for match in param_matches])
             c_ids.append([match.start() for match in c_matches])
 
-            total_num += len(c_ids[-1])
-        return c_ids, params_ids, total_num
+            total_num_c += len(c_ids[-1])
+            total_num_p += len(params_ids[-1])
+        assert total_num_c == total_num_p, "Unexpected params form in subset builder"
+        return c_ids, params_ids, total_num_c
 
     def get_sub_eq_ids(self):
         parent_len = len(self.parent_terms_str)
@@ -130,8 +137,8 @@ if __name__ == '__main__':
     eq_str = '(c[0] * (du/dx + u + exp(x + t) *du/dt) + t**2) + (c[1] * u * (t + x)) + (c[2] * d^2u/dx^2 * (t**2 + x**2)) + (c[3] * t**3) + (c[4] * x**3)'
     rs_code = rs_code.replace(' ', '')
 
-    terms1 = split_with_braces(rs_code)
-    terms2 = split_with_braces(eq_str)
+    # terms1 = split_with_braces(rs_code)
+    # terms2 = split_with_braces(eq_str)
 
     string_form_test1 = 'def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):\n    right_side = t * derivs_dict["du/dx"] * params[0] + params[1] * x * derivs_dict["du/dx"] + params[2] * u * derivs_dict["d^2u/dx^2"]\n    string_form_of_the_equation = "du/dt = c[0] * t * du/dx + c[1] * x * du/dx + c[2] * u * d^2u/dx^2"\n    len_of_params = 3\n    return right_side, string_form_of_the_equation, len_of_params\n'
 

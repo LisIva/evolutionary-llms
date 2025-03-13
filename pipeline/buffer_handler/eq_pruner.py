@@ -22,7 +22,9 @@ class Pruner(object):
 
         for candidate in candidates:
             parent_code = self.full_records_track[candidate[0]].eq_code
-            eq_subset = SubEqSet(parent_code, candidate[0], self.dir_name).subset
+
+            eq_subset = SubEqSet(parent_code, candidate[0], self.dir_name,
+                                 len(self.full_records_track[candidate[0]].params)).subset
             for sub_eq in eq_subset:
                 if sub_eq not in self.full_records_track.keys():
                     complex_score, relat_score, loss, params = self.evaluator.pruner_eval(sub_eq.feq_code,
