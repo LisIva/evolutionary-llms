@@ -18,9 +18,17 @@ def find_eq_positions(response=None, path: str = 'out_0.txt', encoding: str = No
     return begin_pos, end_pos, response, undefined_begin
 
 
+# def move_end_cursor(begin_pos, end_pos, cut_code):
+#     new_begin = end_pos + 1
+#     end_pos = cut_code[new_begin-begin_pos:].find("\n")
+#     pp = cut_code[new_begin-begin_pos:]
+
+
 def get_code_part(eq_text, code_type='string_form_of_the_equation'):
     begin_pos = eq_text.find(f"{code_type} = ")
     line_end_pos = eq_text[begin_pos:].find("\n") + begin_pos
+    # if line_end_pos-1 == '\\':
+    #     cut_code = eq_text[begin_pos:]
     return eq_text[begin_pos + len(f"{code_type} = "):line_end_pos]
 
 
@@ -31,10 +39,14 @@ def replace_wrong_signs(eq_text, code_type='string_form_of_the_equation'):
     eq_origin = get_code_part(eq_text, code_type)
     eq_str = eq_origin.replace(f'-{param[code_type]}[0]', f'{param[code_type]}[0]', 1)
 
-    sign_idx = eq_str.find(f'- {param[code_type]}[')
-    if sign_idx != -1:
+    if eq_str.find(f'- {param[code_type]}[') != -1:
         eq_str = eq_str.replace(f'- {param[code_type]}[', f'+ {param[code_type]}[')
-    else: return eq_text
+
+    if eq_str.find(f'-{param[code_type]}[') != -1:
+        eq_str = eq_str.replace(f'-{param[code_type]}[', f'+ {param[code_type]}[')
+
+    if eq_str == eq_origin:
+        return eq_text
     return eq_text.replace(eq_origin, eq_str)
 
 
@@ -101,5 +113,6 @@ def retrieve_notes(response=None, path: str = 'out_0.txt', encoding: str = None)
 if __name__ == "__main__":
     compose_equation_v1_fun(path='out_0.txt')
     # retrieve_example_response()
+    # get_code_part('', code_type='right_side')
 
 
