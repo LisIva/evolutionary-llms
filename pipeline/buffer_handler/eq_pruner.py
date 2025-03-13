@@ -21,16 +21,16 @@ class Pruner(object):
         enriched_track = self.full_opt_track.copy()
 
         for candidate in candidates:
-            parent_code = self.full_records_track[candidate[0]].eq_code
+            parent_code = self.full_records_track[candidate[0]].rs_code
 
             eq_subset = SubEqSet(parent_code, candidate[0], self.dir_name,
                                  len(self.full_records_track[candidate[0]].params)).subset
             for sub_eq in eq_subset:
                 if sub_eq not in self.full_records_track.keys():
-                    complex_score, relat_score, loss, params = self.evaluator.pruner_eval(sub_eq.feq_code,
+                    complex_score, relat_score, params = self.evaluator.pruner_eval(sub_eq.feq_code,
                                                                                   sub_eq.feq_str, sub_eq.P)
-                    self.eq_buffer.push_subset_record(sub_eq.feq_str, complex_score, relat_score, loss,
-                                                      sub_eq.feq_code, params)
+                    # self.eq_buffer.push_subset_record(sub_eq.feq_str, complex_score, relat_score, loss,
+                    #                                   sub_eq.feq_code, params)
                     enriched_track[sub_eq.feq_str] = (complex_score, relat_score)
         return enriched_track
 

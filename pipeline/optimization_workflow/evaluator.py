@@ -4,6 +4,7 @@ from pipeline.extract_llm_response import compose_equation_v1_fun
 from pipeline.optimization_workflow.complexity_evaluation import eval_complexity
 from promptconstructor.array_to_txt import Data
 from promptconstructor.info_prompts import prompt_complete_inf
+from pipeline.buffer_handler.code_parser import RSExtractor
 
 
 def define_eq(response):
@@ -39,18 +40,19 @@ class Evaluator(object):
         relat_score = eval_error / np.mean(np.fabs(u_t)) * 1000
         return complex_score, relat_score, loss, params
 
-    def pruner_eval(self, eq_code, eq_str, P):
+    def pruner_eval(self, eq_code, eq_str, P, eq_buffer):
         exec(eq_code, globals())
         complex_score, relat_score, loss, params = self.get_eval_scores(eq_str, P)
-        return complex_score, relat_score, loss, params
+        eq_buffer.push_subset_record(eq_str, complex_score, relat_score, loss, eq_code, params)
+        return complex_score, relat_score, params
 
-    def llm_response_eval(self, response, eq_buffer, debug_eval=False):
-        if not debug_eval:
-            eq_code = define_eq(response)
+    def llm_response_eval(self, response, eq_buffer):
+        eq_code = define_eq(response)
         _, eq_str, P = equation_v1(*self.data['inputs'], self.data["derivs_dict"], np.zeros(100))
+        rs_code = RSExtractor(eq_code, P).rs_code
+
         complex_score, relat_score, loss, params = self.get_eval_scores(eq_str, P)
-        if not debug_eval:
-            eq_buffer.push_record(eq_str, complex_score, relat_score, loss, eq_code, params)
+        eq_buffer.push_record(eq_str, complex_score, relat_score, loss, eq_code, params, rs_code)
         return round_score(relat_score), eq_str, params
 
     def evaluate(self, P: int):
