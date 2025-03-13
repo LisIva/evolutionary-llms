@@ -244,36 +244,7 @@ class SympyConverter(object):
 
         self.trim_numpy()
         self.replace_derivatives()
-        if self.is_correct_params():
-            self.replace_params()
-        else:
-            self.replace_ci()
-
         self.sympy_code = expand(sympify(self.rs_code))
-
-    def is_correct_params(self):
-        return True if self.rs_code.find('params[') > -1 else False
-
-    def replace_ci(self):
-        def replace_match(match):
-            param_name = match.group(0)  # Extract the matched parameter name (e.g., "c0")
-            if param_name in c_map:
-                nonlocal params_found
-                params_found = True
-                return str(c_map[param_name])
-
-        params_found = False
-        if len(self.params) == 1:
-            c_idx = self.rs_code.find('c*')
-            if c_idx != -1:
-                self.rs_code = self.rs_code[:c_idx] + f'{self.params[0]}*' + self.rs_code[c_idx + 2:]
-                params_found = True
-        else:
-            c_map = {f"c{i}": val for i, val in enumerate(self.params)}
-            pattern = r"c\d+"  # Matches "c0", "c1", etc.
-            self.rs_code = re.sub(pattern, replace_match, self.rs_code)
-        if not params_found:
-            raise Exception('Unexpected params format while parsing rs_code')
 
     def replace_params(self):
         def replace_match(match):
