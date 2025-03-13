@@ -48,25 +48,84 @@ def strip(code_part_ls):
     return new_code_part_ls
 
 
+class RSVarsFixer(object):
+    def __init__(self, rs_code, P):
+        self.rs_code = rs_code
+        self.P = P
+
+    def fix(self):
+        # try fixing parameters if they have wrong names
+        if not self.has_correct_params():
+            if self.P == 1:
+                self.rs_code = self.rs_code.replace('c*', 'params[0]*')
+            else:
+                self.rs_code = self.fix_params()
+
+        # try fixing derivs if they have wrong names
+        if not self.has_correct_derivs():
+            self.rs_code = self.fix_derivs()
+
+        # if one of them is not correct raise exception
+        if not self.has_correct_params() or not self.has_correct_derivs():
+            raise Exception('Could not fix var names in rs_code variable')
+        return self.rs_code
+
+    def has_correct_params(self):
+        return True if self.rs_code.find('params[') != -1 else False
+
+    def has_correct_derivs(self):
+        return True if self.rs_code.find('derivs_dict[') != -1 else False
+
+    def fix_params(self):
+        def replace_match(match):
+            index = match.group(1)
+            return f"params[{index}]"
+        return re.sub(r"c\[(\d+)]", replace_match, self.rs_code)
+
+    def fix_derivs(self):
+        def replace_match(match):
+            key = match.group(0)  # Extract the matched key (e.g., "du_dx", "d2u_dxn")
+
+            # Handle first derivatives
+            if key == "du_dx":
+                return 'derivs_dict["du/dx"]'
+            elif key == "du_dt":
+                return 'derivs_dict["du/dt"]'
+
+            # Handle higher-order derivatives
+            elif key.startswith("d") and "_dx" in key:
+                n = key.split("d")[1].split("u")[0]  # Extract the power (n)
+                return f'derivs_dict["d^{n}u/dx^{n}"]'
+            elif key.startswith("d") and "_dt" in key:
+                n = key.split("d")[1].split("u")[0]  # Extract the power (n)
+                return f'derivs_dict["d^{n}u/dt^{n}"]'
+
+        pattern = r"d\d*u_d[xt]\d*"  # Matches "du_dx", "du_dt", "d2u_dx2", etc.
+        return re.sub(pattern, replace_match, self.rs_code)
+
+
 class RSExtractor(object):
-    def __init__(self, eq_text, keep_header=False):
+    def __init__(self, eq_text, P=1, keep_header=False):
         self.eq_text = eq_text
-        b, e = self.eq_code_boundary()
+        b, e = self.rs_code_boundary()
 
         self.cut_text = eq_text[b:e].replace(' ', '')
         first_line_pos = self.cut_text.find("\n")
 
+        # extract rs_code according to its format
         if self.has_multiline(first_line_pos, self.cut_text):
-            self.eq_code = self.extract_multiline(first_line_pos)
+            self.rs_code = self.extract_multiline(first_line_pos)
         elif self.has_split_code(first_line_pos, self.cut_text):
-            self.eq_code = self.extract_split_code(first_line_pos)
+            self.rs_code = self.extract_split_code(first_line_pos)
         else:
-            self.eq_code = self.extract_code(first_line_pos)
+            self.rs_code = self.extract_code(first_line_pos)
+
+        self.rs_code = RSVarsFixer(self.rs_code, P).fix()
 
         if keep_header:
-            self.eq_code = ''.join(['right_side=', self.eq_code])
+            self.rs_code = ''.join(['right_side=', self.rs_code])
 
-    def eq_code_boundary(self):
+    def rs_code_boundary(self):
         begin_pos = self.eq_text.find("right_side = ")
         end_pos = self.eq_text[begin_pos:].find('return ') + begin_pos
         return begin_pos, end_pos
@@ -99,102 +158,101 @@ class RSExtractor(object):
         return self.cut_text[len("right_side="):line_pos]
 
 
-# class AssociativeBraces(object):
-#     def __init__(self, eq_code, brace_pairs):
-#         self.eq_code = eq_code
-#         self.pairs = brace_pairs
-#
-#     def __check_start(self, s):
-#         if s-1 > 0 and (self.eq_code[s-1] == '+' or self.eq_code[s-1] == '('):
-#                 return True
-#         elif s == 0: return True
-#         return False
-#
-#     def __check_end(self, e):
-#         if e+1 < len(self.eq_code) and (self.eq_code[e+1] == '+' or self.eq_code[e+1] == ')'):
-#             return True
-#         elif e == len(self.eq_code) - 1:
-#             return True
-#         return False
-#
-#     def open_braces(self):
-#         i = 0
-#         while i < len(self.pairs):
-#             if self.__check_start(self.pairs[i][0]) and self.__check_end(self.pairs[i][1]):
-#                 self.__remove_braces(i)
-#             else:
-#                 i += 1
-#         return self.eq_code, self.pairs
-#
-#     def __subtract_value(self, number, i):
-#         if number < self.pairs[i][0]:
-#             return 0
-#         elif number > self.pairs[i][1]:
-#             return 2
-#         else:
-#             return 1
-#
-#     def __update_pairs(self, i):
-#         indexes = [j for j in range(len(self.pairs)) if j != i]
-#         for j in indexes:
-#             self.pairs[j] = (self.pairs[j][0] - self.__subtract_value(self.pairs[j][0], i),
-#                              self.pairs[j][1] - self.__subtract_value(self.pairs[j][1], i))
-#
-#     def __remove_braces(self, i):
-#         self.eq_code = self.eq_code[:self.pairs[i][0]] + self.eq_code[self.pairs[i][0] + 1:]
-#         self.__update_pairs(i)
-#
-#         end_idx = self.pairs[i][1] - 1
-#         self.eq_code = self.eq_code[:end_idx] + self.eq_code[end_idx + 1:]
-#         self.pairs.pop(i)
+class AssociativeBraces(object):
+    def __init__(self, rs_code, brace_pairs):
+        self.rs_code = rs_code
+        self.pairs = brace_pairs
+
+    def __check_start(self, s):
+        if s-1 > 0 and (self.rs_code[s-1] == '+' or self.rs_code[s-1] == '('):
+                return True
+        elif s == 0: return True
+        return False
+
+    def __check_end(self, e):
+        if e+1 < len(self.rs_code) and (self.rs_code[e+1] == '+' or self.rs_code[e+1] == ')'):
+            return True
+        elif e == len(self.rs_code) - 1:
+            return True
+        return False
+
+    def open_braces(self):
+        i = 0
+        while i < len(self.pairs):
+            if self.__check_start(self.pairs[i][0]) and self.__check_end(self.pairs[i][1]):
+                self.__remove_braces(i)
+            else:
+                i += 1
+        return self.rs_code, self.pairs
+
+    def __subtract_value(self, number, i):
+        if number < self.pairs[i][0]:
+            return 0
+        elif number > self.pairs[i][1]:
+            return 2
+        else:
+            return 1
+
+    def __update_pairs(self, i):
+        indexes = [j for j in range(len(self.pairs)) if j != i]
+        for j in indexes:
+            self.pairs[j] = (self.pairs[j][0] - self.__subtract_value(self.pairs[j][0], i),
+                             self.pairs[j][1] - self.__subtract_value(self.pairs[j][1], i))
+
+    def __remove_braces(self, i):
+        self.rs_code = self.rs_code[:self.pairs[i][0]] + self.rs_code[self.pairs[i][0] + 1:]
+        self.__update_pairs(i)
+
+        end_idx = self.pairs[i][1] - 1
+        self.rs_code = self.rs_code[:end_idx] + self.rs_code[end_idx + 1:]
+        self.pairs.pop(i)
 
 
-# class BracesHandler(object):
-#     def __init__(self, eq_code):
-#         self.eq_code = eq_code
-#         self.pairs, sort_len_pairs = self.find_pairs()
-#
-#         associative_braces = AssociativeBraces(eq_code, self.pairs)
-#         self.eq_code, self.pairs = associative_braces.open_braces()
-#         self.pairs1, sort_len_pairs1 = self.find_pairs()
-#         print()
-#
-#     def find_braces(self):
-#         starts = [match.start() for match in re.finditer(r'[(]', self.eq_code)]
-#         ends = [match.start() for match in re.finditer(r'[)]', self.eq_code)]
-#         return starts[::-1], ends
-#
-#     def find_pairs(self):
-#         def find_pair(start, ends):
-#             for e in ends:
-#                 if start - e < 0:
-#                     return e
-#
-#         b_starts, b_ends = self.find_braces()
-#         b_pairs = []
-#         for s in b_starts:
-#             e = find_pair(s, b_ends)
-#             b_pairs.append((s, e))
-#             b_ends.remove(e)
-#         sorted_pairs = sorted(b_pairs, key=lambda x: x[1] - x[0], reverse=True)
-#         return b_pairs[::-1], sorted_pairs
+class ABracesHandler(object):
+    def __init__(self, rs_code):
+        self.rs_code = rs_code
+        self.pairs, sort_len_pairs = self.find_pairs()
+
+        associative_braces = AssociativeBraces(rs_code, self.pairs)
+        self.rs_code, self.pairs = associative_braces.open_braces()
+
+    def find_braces(self):
+        starts = [match.start() for match in re.finditer(r'[(]', self.rs_code)]
+        ends = [match.start() for match in re.finditer(r'[)]', self.rs_code)]
+        return starts[::-1], ends
+
+    def find_pairs(self):
+        def find_pair(start, ends):
+            for e in ends:
+                if start - e < 0:
+                    return e
+
+        b_starts, b_ends = self.find_braces()
+        b_pairs = []
+        for s in b_starts:
+            e = find_pair(s, b_ends)
+            b_pairs.append((s, e))
+            b_ends.remove(e)
+        sorted_pairs = sorted(b_pairs, key=lambda x: x[1] - x[0], reverse=True)
+        return b_pairs[::-1], sorted_pairs
 
 
 class SympyConverter(object):
-    def __init__(self, eq_code, params):
-        self.eq_code = eq_code
+    def __init__(self, rs_code, params):
+        self.rs_code = rs_code
         self.params = params
 
+        self.trim_numpy()
+        self.replace_derivatives()
         if self.is_correct_params():
             self.replace_params()
         else:
             self.replace_ci()
-        self.trim_numpy()
-        self.replace_derivatives()
-        self.sympy_code = expand(sympify(self.eq_code))
+
+        self.sympy_code = expand(sympify(self.rs_code))
 
     def is_correct_params(self):
-        return True if self.eq_code.find('params[') > -1 else False
+        return True if self.rs_code.find('params[') > -1 else False
 
     def replace_ci(self):
         def replace_match(match):
@@ -206,26 +264,26 @@ class SympyConverter(object):
 
         params_found = False
         if len(self.params) == 1:
-            c_idx = self.eq_code.find('c*')
+            c_idx = self.rs_code.find('c*')
             if c_idx != -1:
-                self.eq_code = self.eq_code[:c_idx] + f'{self.params[0]}*' + self.eq_code[c_idx + 2:]
+                self.rs_code = self.rs_code[:c_idx] + f'{self.params[0]}*' + self.rs_code[c_idx + 2:]
                 params_found = True
         else:
             c_map = {f"c{i}": val for i, val in enumerate(self.params)}
             pattern = r"c\d+"  # Matches "c0", "c1", etc.
-            self.eq_code = re.sub(pattern, replace_match, self.eq_code)
+            self.rs_code = re.sub(pattern, replace_match, self.rs_code)
         if not params_found:
-            raise Exception('Unexpected params format while parsing eq_code')
+            raise Exception('Unexpected params format while parsing rs_code')
 
     def replace_params(self):
         def replace_match(match):
             index = match.group(1)  # Extract the number inside the brackets
             # return f"params{index}"
             return f"{self.params[int(index)]}"
-        self.eq_code = re.sub(r"params\[(\d+)]", replace_match, self.eq_code)
+        self.rs_code = re.sub(r"params\[(\d+)]", replace_match, self.rs_code)
 
     def trim_numpy(self):
-        self.eq_code = self.eq_code.replace('np.', '').replace('numpy.', '')
+        self.rs_code = self.rs_code.replace('np.', '').replace('numpy.', '')
 
     def replace_derivatives(self):
         def replace_match(match):
@@ -245,17 +303,17 @@ class SympyConverter(object):
 
         # Use re.sub with a pattern to match derivs_dict["..."]
         pattern = r'derivs_dict\["([^"]+)"\]'  # Matches derivs_dict["<key>"]
-        self.eq_code = re.sub(pattern, lambda match: replace_match(match), self.eq_code)
+        self.rs_code = re.sub(pattern, lambda match: replace_match(match), self.rs_code)
 
 
 class CodeParser(object):
     def __init__(self, eq_text, params):
         self.eq_text = eq_text
 
-        eq_code = RSExtractor(eq_text).eq_code
-        sym_converter = SympyConverter(eq_code, params)
+        rs_code = RSExtractor(eq_text).rs_code
+        sym_converter = SympyConverter(rs_code, params)
 
-        self.eq_code = sym_converter.eq_code
+        self.rs_code = sym_converter.rs_code
         self.sympy_code = sym_converter.sympy_code
 
 
