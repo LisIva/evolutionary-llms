@@ -270,6 +270,7 @@ class SympyConverter(object):
 
         self.trim_numpy()
         self.replace_derivatives()
+        self.replace_params()
         self.sympy_code = expand(sympify(self.rs_code))
 
     def replace_params(self):
@@ -301,17 +302,6 @@ class SympyConverter(object):
         # Use re.sub with a pattern to match derivs_dict["..."]
         pattern = r'derivs_dict\["([^"]+)"\]'  # Matches derivs_dict["<key>"]
         self.rs_code = re.sub(pattern, lambda match: replace_match(match), self.rs_code)
-
-
-class CodeParser(object):
-    def __init__(self, eq_text, params):
-        self.eq_text = eq_text
-
-        rs_code = RSExtractor(eq_text, 6).rs_code
-        sym_converter = SympyConverter(rs_code, params)
-
-        self.rs_code = sym_converter.rs_code
-        self.sympy_code = sym_converter.sympy_code
 
 
 # проверить все ли в порядке с edge case - т.к. сейчас парсер будет впихнут в конец оптимизации,
