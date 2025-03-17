@@ -3,19 +3,28 @@ from promptconstructor.info_prompts import prompt_complete_inf
 from pipeline.buffer_handler.code_parser import SympyConverter
 import numpy as np
 from sympy import expand, sympify
-
+import sympy
 # class Individ(object):
 #     def __init__(self, sympy_form, epde_form):
 #         self.sympy_form = sympy_form
 
+class Family(object):
+    def __init__(self, family_type, tokens):
+        self.family_type = family_type
+        self.tokens = tokens
+
 
 class LLMPool(object):
     def __init__(self):
-        self.tokens = {'t': False, 'x': False, 'deriv_t': 1, 'deriv_x': 1}
-        self.special_tokens = {} # key: как епде будет выводить токен юзеру, val - лямбда-функция как его посчитать
+        self.simple_tokens_pow = {'t': 0, 'x': 0, }
+        self.max_deriv_orders = {'max_deriv_t': 1, 'max_deriv_x': 1}
+        self.special_tokens_pow = {} # key: как епде будет выводить токен юзеру, val - лямбда-функция как его посчитать
 
-    def set_token(self, token, value):
-        self.tokens[token] = value
+    def set_token_pow(self, token, value):
+        self.simple_tokens_pow[token] = value
+
+    def set_max_d_order(self, token, value):
+        self.max_deriv_orders[token] = value
 
 
 class BaseTokenConverter(object):
@@ -26,10 +35,10 @@ class BaseTokenConverter(object):
         if self.token == 'u':
             return 'u'
         elif self.token == 't':
-            pool.set_token('t', True)
+            pool.set_token_pow('t', 1)
             return 'x1'
         elif self.token == 'x':
-            pool.set_token('x', True)
+            pool.set_token_pow('x', 1)
             return 'x2'
         elif self.token == 'du_dt':
             return 'du/dx1'
@@ -41,9 +50,37 @@ class BaseTokenConverter(object):
     def __convert_high_deriv(self, pool: LLMPool):
         var = self.token[-2]
         n = self.token[-1]
-        if pool.tokens[f'derivs_{var}'] < n:
-            pool.set_token(f'derivs_{var}', n)
+
+        if pool.max_deriv_orders[f'max_deriv_{var}'] < n:
+            pool.set_max_d_order(f'max_deriv_{var}', n)
         return f'd^{n}u/dx1^{n}' if var == 't' else f'd^{n}u/dx2^{n}'
+
+
+class FunConverter(object):
+    def __init__(self, term, power, llm_pool):
+        self.term = term
+        self.power = power
+        self.llm_pool = llm_pool
+
+        if not self.is_valid_expression(self.term.args[0]):
+            raise Exception('Cannot convert nested numpy functions in suggested solution')
+
+    def is_valid_expression(self, expr):
+        if isinstance(expr, sympy.Symbol):
+            return True
+        if isinstance(expr, sympy.Add):
+            for arg in expr.args:
+                if not self.is_valid_expression(arg):
+                    return False
+            return True
+        if isinstance(expr, sympy.Mul):
+            for arg in expr.args:
+                if not self.is_valid_expression(arg):
+                    return False
+            return True
+        if isinstance(expr, (sympy.Float, sympy.Integer)):
+            return True
+        return False
 
 
 class MulConverter(object):
@@ -116,7 +153,31 @@ if __name__ == '__main__':
     # trans4 = SolutionTranslator(rs4, np.array([1.2, 5.678, 6.5421, 4.12]), llm_pool).translate()
     rs5 = 'params[0] * (np.arcsin(t) + u) ** 2'
 
-    expression1 = sympify('sin(t)')
+    rs6 = '(arcsin((log(t) + 5 * x) * du_dt)) ** 2'
+    express_pow = expand(sympify(rs6))
+    term = express_pow.args[0]
+    term_power = express_pow.args[1]
+    base_name = str(term.func)
+    term_str = str(term)
+    t = 5
+    allowed_namespace = {'np': np,}
+
+    is_subset = term.free_symbols.issubset({sympy.symbols('t'), sympy.symbols('x')})
+    contains_t = sympy.symbols('t') in term.free_symbols
+    lambda_str = f"lambda t: np.{term_str}"
+    # lambda_str = f"lambda t: np.{term_str}"
+    np_fun = eval(lambda_str, allowed_namespace)
+
+    # custom_trigonometric_eval_fun = {
+    #     'cos(t)': lambda *grids, **kwargs: np.cos(grids[0]) ** kwargs['power'],
+    #     'sin(x)': lambda *grids, **kwargs: np.sin(grids[1]) ** kwargs['power']}
+    # custom_trig_evaluator = CustomEvaluator(custom_trigonometric_eval_fun,
+    #                                         eval_fun_params_labels=['power'])
+
+    # trig_params_ranges = {'power': (1, 1)}
+
+
+    expression1 = expand(sympify('sin(t)'))
     exb11 = expression1.is_Symbol
     ex1 = expression1.func.__name__
     ex111 = str(expression1.func)
