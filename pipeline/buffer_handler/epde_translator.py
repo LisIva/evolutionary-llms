@@ -8,11 +8,6 @@ import sympy
 #     def __init__(self, sympy_form, epde_form):
 #         self.sympy_form = sympy_form
 
-class Family(object):
-    def __init__(self, family_type, tokens):
-        self.family_type = family_type
-        self.tokens = tokens
-
 
 class LLMPool(object):
     def __init__(self):
@@ -26,19 +21,25 @@ class LLMPool(object):
     def set_max_d_order(self, token, value):
         self.max_deriv_orders[token] = value
 
+    def set_special_token_pow(self, token, value):
+        self.special_tokens_pow[token] = value
+
 
 class BaseTokenConverter(object):
-    def __init__(self, token):
+    def __init__(self, token, power):
         self.token = str(token)
+        self.power = power
 
     def convert(self, pool: LLMPool):
         if self.token == 'u':
             return 'u'
         elif self.token == 't':
-            pool.set_token_pow('t', 1)
+            if pool.simple_tokens_pow['t'] < self.power:
+                pool.set_token_pow('t', self.power)
             return 'x1'
         elif self.token == 'x':
-            pool.set_token_pow('x', 1)
+            if pool.simple_tokens_pow['x'] < self.power:
+                pool.set_token_pow('x', self.power)
             return 'x2'
         elif self.token == 'du_dt':
             return 'du/dx1'
@@ -57,13 +58,23 @@ class BaseTokenConverter(object):
 
 
 class FunConverter(object):
-    def __init__(self, term, power, llm_pool):
+    def __init__(self, term, power):
         self.term = term
         self.power = power
-        self.llm_pool = llm_pool
 
         if not self.is_valid_expression(self.term.args[0]):
             raise Exception('Cannot convert nested numpy functions in suggested solution')
+
+        if not self.has_valid_variables():
+            raise Exception('Cannot convert a sympy function dependant on variables other than t and x')
+
+    def convert(self, llm_pool):
+        if llm_pool.special_tokens_pow.get(self.term) is not None:
+            if llm_pool.special_tokens_pow[self.term] < self.power:
+                llm_pool.set_special_token_pow(self.term, self.power)
+        else:
+            llm_pool.set_special_token_pow(self.term, self.power)
+        return str(self.term)
 
     def is_valid_expression(self, expr):
         if isinstance(expr, sympy.Symbol):
@@ -82,6 +93,9 @@ class FunConverter(object):
             return True
         return False
 
+    def has_valid_variables(self):
+        return self.term.free_symbols.issubset({sympy.Symbol('t'), sympy.Symbol('x')})
+
 
 class MulConverter(object):
     def __init__(self, mul_term, llm_pool):
@@ -92,19 +106,19 @@ class MulConverter(object):
         mul_str = [str(self.mul_term.args[0]), ]
         for token in self.mul_term.args[1:]:
             if token.is_Symbol:
-                epde_token = BaseTokenConverter(token).convert(self.llm_pool) + '{power: 1.0}'
+                epde_token = BaseTokenConverter(token, 1).convert(self.llm_pool) + '{power: 1.0}'
             elif token.is_Pow:
                 if token.args[0].is_Symbol:
-                    if token.args[1].is_Half:
-                        epde_token = BaseTokenConverter(token.args[0]).convert(self.llm_pool) \
-                                     + '{power: 0.5}'
-                    else:
-                        epde_token = BaseTokenConverter(token.args[0]).convert(self.llm_pool) \
+                    if isinstance(token.args[1], sympy.Integer):
+                        epde_token = BaseTokenConverter(token.args[0], int(token.args[1])).convert(self.llm_pool) \
                                      + '{power: ' + str(token.args[1]) + '.0}'
+                    else:
+                        epde_token = BaseTokenConverter(token.args[0], float(token.args[1])).convert(self.llm_pool) \
+                                     + '{power: 0.5}'
                 else:
                     pass
             else:
-                pass
+                epde_token = FunConverter(token, 1).convert(self.llm_pool) + '{power: 1.0}'
             mul_str.append(epde_token)
         return mul_str
 
@@ -151,7 +165,7 @@ if __name__ == '__main__':
     rs4 = 'params[0] * derivs_dict["du/dx"] ** 3 + ((params[1] * derivs_dict["du/dx"] ** 2 * np.cos(params[2] * u +1)) * x**2) * u +params[3] * derivs_dict["du/dt"] * (t**2 + 2)'
     llm_pool = LLMPool()
     # trans4 = SolutionTranslator(rs4, np.array([1.2, 5.678, 6.5421, 4.12]), llm_pool).translate()
-    rs5 = 'params[0] * (np.arcsin(t) + u) ** 2'
+    rs5 = 'params[0] * np.sqrt(u)'
 
     rs6 = '(arcsin((log(t) + 5 * x) * du_dt)) ** 2'
     express_pow = expand(sympify(rs6))
@@ -162,8 +176,19 @@ if __name__ == '__main__':
     t = 5
     allowed_namespace = {'np': np,}
 
+    cur_val=1
+    a = {'1': 2, '2': 2}
+    if a.get('1') is not None:
+        if a['1'] < cur_val:
+            a['1'] = cur_val
+    else:
+        a['1'] = cur_val
+
+
+
     is_subset = term.free_symbols.issubset({sympy.symbols('t'), sympy.symbols('x')})
     contains_t = sympy.symbols('t') in term.free_symbols
+    {'str1': ()}
     lambda_str = f"lambda t: np.{term_str}"
     # lambda_str = f"lambda t: np.{term_str}"
     np_fun = eval(lambda_str, allowed_namespace)
