@@ -323,6 +323,6 @@ if __name__ == '__main__':
     rs9 = 'right_side = c0 * np.exp(-c1*t) * derivs_dict["d^2u/dx^2"] + c2*u\n    return right_side'
     params1 = np.array([1.2678943, 5.898115, -7.264311])
     params2 = np.array([1.2678943, ])
-    cp = CodeParser(rs8, params2)
+    # cp = CodeParser(rs8, params2)
     print()
 

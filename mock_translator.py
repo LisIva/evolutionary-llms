@@ -60,7 +60,7 @@ def prepare_basic_inputs():
                                              params_ranges={'power': (1, 1)},
                                              params_equality_ranges=None)
     # trig_tokens.token_family
-    pool = TFPool([var_family, trig_tokens.token_family, custom_grid_tokens.token_family])
+    pool = TFPool([var_family, custom_grid_tokens.token_family])
 
     return grids, pool
 
@@ -90,5 +90,6 @@ def mock_equation(text_form = ('(1.0 * u{power: 1} * sin{freq: 1, power: 1, dim:
 
 
 if __name__ == '__main__':
-    me = mock_equation()
+    text = '1.0 * u{power: 1} + 2.7744 * du/dx1{power: 1} * t{power: 1} = du/dx1{power: 1}'
+    _, eq = mock_equation(text)
     print()
