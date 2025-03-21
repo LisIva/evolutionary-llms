@@ -14,15 +14,21 @@ class BaseTokenConverter(object):
         self.power = power
 
     def convert(self, pool: LLMPool):
+        def set_power(key):
+            if pool.simple_tokens_pow[key][0] == 0:
+                pool.set_token_pow(key, self.power, self.power)
+            elif pool.simple_tokens_pow[key][0] > self.power:
+                pool.set_token_pow(key, self.power, pool.simple_tokens_pow[key][1])
+            elif pool.simple_tokens_pow[key][1] < self.power:
+                pool.set_token_pow(key, pool.simple_tokens_pow[key][0], self.power)
+
         if self.token == 'u':
             return 'u'
         elif self.token == 't':
-            if pool.simple_tokens_pow['t'] < self.power:
-                pool.set_token_pow('t', self.power)
+            set_power('t')
             return 't'
         elif self.token == 'x':
-            if pool.simple_tokens_pow['x'] < self.power:
-                pool.set_token_pow('x', self.power)
+            set_power('x')
             return 'x'
         elif self.token == 'du_dt':
             return 'du/dx1'
@@ -54,13 +60,15 @@ class FunConverter(object):
             self.correct_function = False
             warnings.warn("Cannot convert a sympy function dependant on variables other than t and x", UserWarning)
 
-    def convert(self, llm_pool):
+    def convert(self, pool):
         if self.correct_function:
-            if llm_pool.special_tokens_pow.get(self.term) is not None:
-                if llm_pool.special_tokens_pow[self.term] < self.power:
-                    llm_pool.set_special_token_pow(self.term, self.power)
+            if pool.special_tokens_pow.get(self.term) is not None:
+                if pool.special_tokens_pow[self.term][0] > self.power:
+                    pool.set_special_token_pow(self.term, self.power, pool.special_tokens_pow[self.term][1])
+                elif pool.special_tokens_pow[self.term][1] < self.power:
+                    pool.set_special_token_pow(self.term, pool.special_tokens_pow[self.term][0], self.power)
             else:
-                llm_pool.set_special_token_pow(self.term, self.power)
+                pool.set_special_token_pow(self.term, self.power, self.power)
             return str(self.term)
         else:
             return None
@@ -121,7 +129,7 @@ class MulConverter(object):
 class SolutionTranslator(object):
     def __init__(self, rs_code, params, llm_pool, dir_name):
         sym_converter = SympyConverter(rs_code, params)
-        self.left_deriv = prompt_complete_inf[dir_name]['left_deriv']
+        self.left_deriv = prompt_complete_inf[dir_name]['left_deriv'].replace('/', '_')
         self.rs_code = sym_converter.rs_code
         self.sympy_code = sym_converter.sympy_code
         self.llm_pool = llm_pool
@@ -152,37 +160,11 @@ if __name__ == '__main__':
                  'du/dt = c[0] * u * du/dx + c[1] * d^2u/dx^2 + c[2] * du/dx * t': (2.15, 37.057907826954576),
                  'du/dt = c[0] * du/dx + c[1] * du/dt * d^2u/dx^2': (1.75, 542.9853705131861),
                  'du/dt = c[0] * du/dx + c[1] * t * du/dx': (1.2, 442.49077370655203)}
-    rs4 = 'params[0] * derivs_dict["du/dx"] ** 3 + ((params[1] * derivs_dict["du/dx"] ** 2 * np.cos(params[2] * t +1)) * x**2) * u +params[3] * derivs_dict["du/dt"] * (t**2 + 2)'
+    rs4 = 'params[0] * derivs_dict["du/dx"] ** 3 * t + ((params[1] * derivs_dict["du/dx"] ** 2 * np.cos(params[2] * t +1)) * x**2) * u +params[3] * derivs_dict["du/dt"] * (t**2 + 2)'
     llm_pool = LLMPool()
-    trans4 = SolutionTranslator(rs4, np.array([1.2, 5.678, 6.5421, 4.12]), llm_pool).translate()
+    trans4 = SolutionTranslator(rs4, np.array([1.2, 5.678, 6.5421, 4.12]), llm_pool, 'sindy-burg').translate()
+    epde_classes = llm_pool.to_epde_classes()
     rs5 = 'params[0] * np.sqrt(u)'
-
-    rs6 = '(arcsin((log(t) + 5 * x) * du_dt)) ** 2'
-    express_pow = expand(sympify(rs6))
-    term = express_pow.args[0]
-    term_power = express_pow.args[1]
-    base_name = str(term.func)
-    term_str = str(term)
-    t = 5
-    allowed_namespace = {'np': np, }
-    lambda_str = f"lambda t: np.{term_str}"
-    np_fun = eval(lambda_str, allowed_namespace)
-
-    # custom_trigonometric_eval_fun = {
-    #     'cos(t)': lambda *grids, **kwargs: np.cos(grids[0]) ** kwargs['power'],
-    #     'sin(x)': lambda *grids, **kwargs: np.sin(grids[1]) ** kwargs['power']}
-    # custom_trig_evaluator = CustomEvaluator(custom_trigonometric_eval_fun,
-    #                                         eval_fun_params_labels=['power'])
-
-    # trig_params_ranges = {'power': (1, 1)}
-
-    expression1 = expand(sympify('sin(t)'))
-    exb11 = expression1.is_Symbol
-    ex1 = expression1.func.__name__
-    ex111 = str(expression1.func)
-
-    expression2 = sympify('du_dt')
-    exb21 = expression2.is_Symbol
-    ex2 = expression2.name
-    trans5 = SolutionTranslator(rs5, np.array([1.2, ]), llm_pool).translate()
+    ex1 = sympify('sin(t)').func.__name__
+    ex111 = str(sympify('sin(t)').func)
     print()

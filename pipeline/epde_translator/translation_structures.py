@@ -6,29 +6,30 @@ import sympy as sp
 
 class LLMPool(object):
     def __init__(self):
-        self.simple_tokens_pow = {'t': 0, 'x': 0, }
+        self.simple_tokens_pow = {'t': (0, 0), 'x': (0, 0) }
         self.max_deriv_orders = {'max_deriv_t': 1, 'max_deriv_x': 1}
         self.special_tokens_pow = {}  # key: как епде будет выводить токен юзеру, val - лямбда-функция как его посчитать
-        self.epde_tokens = []
+        self.epde_classes = []
 
-    def to_epde_classes(self, grids):
+    def to_epde_classes(self):
         for key in self.simple_tokens_pow.keys():
-            if self.simple_tokens_pow[key] != 0:
+            if self.simple_tokens_pow[key][0] != 0:
                 ct_converter = CustomTokenConverter(str(key), self.simple_tokens_pow[key])
-                self.epde_tokens.append(ct_converter.get_cache_token(grids))
+                self.epde_classes.append(ct_converter.get_cache_token())
 
         for key in self.special_tokens_pow.keys():
-            ct_converter = CustomTokenConverter(str(key), self.special_tokens_pow[key])
-            self.epde_tokens.append(ct_converter.get_custom_token())
+            ct_converter = CustomTokenConverter(key, self.special_tokens_pow[key])
+            self.epde_classes.append(ct_converter.get_custom_token())
+        return self.epde_classes
 
-    def set_token_pow(self, token, value):
-        self.simple_tokens_pow[token] = value
+    def set_token_pow(self, token, min_pow, max_pow):
+        self.simple_tokens_pow[token] = (min_pow, max_pow)
 
-    def set_max_d_order(self, token, value):
-        self.max_deriv_orders[token] = value
+    def set_max_d_order(self, token, max_order):
+        self.max_deriv_orders[token] = max_order
 
-    def set_special_token_pow(self, token, value):
-        self.special_tokens_pow[token] = value
+    def set_special_token_pow(self, token, min_pow, max_pow):
+        self.special_tokens_pow[token] = (min_pow, max_pow)
 
 
 class CustomTokenConverter(object):
@@ -36,17 +37,27 @@ class CustomTokenConverter(object):
         self.token = token
         self.power = power
 
-    def get_cache_token(self, grids):
-        data = grids[0] if self.token == 't' else grids[1]
-        return CacheStoredTokens(token_type=self.token, token_labels=[self.token],
-                                 token_tensors={self.token: data},
-                                 params_ranges={'power': (1, self.power)}, params_equality_ranges=None)
+    def get_cache_token(self):
+        lambda_signature = 'grids[0]' if self.token == 't' else 'grids[1]'
+        lambda_str = f"lambda *grids, **kwargs: ({lambda_signature}) ** kwargs['power']"
+        eval_fun = {self.token: lambda_str}
+        evaluator = CustomEvaluator(eval_fun, eval_fun_params_labels=['power'])
+        params_ranges = {'power': (self.power[0], self.power[1])}
+        return CustomTokens(token_type=self.token, token_labels=[self.token],
+                            evaluator=evaluator, params_ranges=params_ranges,
+                            params_equality_ranges={}, meaningful=True, unique_token_type=False)
+
+    # def get_cache_token(self, grids):
+    #     data = grids[0] if self.token == 't' else grids[1]
+    #     return CacheStoredTokens(token_type=self.token, token_labels=[self.token],
+    #                              token_tensors={self.token: data},
+    #                              params_ranges={'power': (1, self.power)}, params_equality_ranges=None)
 
     def get_custom_token(self):
         name = str(self.token)
         eval_fun = {name: self.__get_lambda_fun()}
         evaluator = CustomEvaluator(eval_fun, eval_fun_params_labels=['power'])
-        params_ranges = {'power': (1, self.power)}
+        params_ranges = {'power': (self.power[0], self.power[1])}
         return CustomTokens(token_type=name, token_labels=[name],
                             evaluator=evaluator, params_ranges=params_ranges,
                             params_equality_ranges={}, meaningful=True, unique_token_type=False)
