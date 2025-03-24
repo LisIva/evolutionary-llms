@@ -39,7 +39,7 @@ class BaseTokenConverter(object):
 
     def __convert_high_deriv(self, pool: LLMPool):
         var = self.token[-2]
-        n = self.token[-1]
+        n = int(self.token[-1])
 
         if pool.max_deriv_orders[f'max_deriv_{var}'] < n:
             pool.set_max_d_order(f'max_deriv_{var}', n)
@@ -76,17 +76,20 @@ class FunConverter(object):
     def is_valid_expression(self, expr):
         if isinstance(expr, sympy.Symbol):
             return True
-        if isinstance(expr, sympy.Add):
+        elif isinstance(expr, sympy.Add):
             for arg in expr.args:
                 if not self.is_valid_expression(arg):
                     return False
             return True
-        if isinstance(expr, sympy.Mul):
+        elif isinstance(expr, sympy.Mul):
             for arg in expr.args:
                 if not self.is_valid_expression(arg):
                     return False
             return True
-        if isinstance(expr, (sympy.Float, sympy.Integer)):
+        elif isinstance(expr, sympy.Pow):
+            if self.is_valid_expression(expr.args[0]):
+                return True
+        elif isinstance(expr, (sympy.Float, sympy.Integer)):
             return True
         return False
 
@@ -101,6 +104,9 @@ class MulConverter(object):
 
     def to_epde(self):
         mul_str = [str(self.mul_term.args[0]), ]
+        if self.llm_pool.factors_max_num < len(self.mul_term.args)-1:
+            self.llm_pool.factors_max_num = len(self.mul_term.args)-1
+
         for token in self.mul_term.args[1:]:
             if token.is_Symbol:
                 epde_token = BaseTokenConverter(token, 1).convert(self.llm_pool) + '{power: 1.0}'
@@ -127,7 +133,7 @@ class MulConverter(object):
 
 
 class SolutionTranslator(object):
-    def __init__(self, rs_code, params, llm_pool, dir_name):
+    def __init__(self, rs_code, params, llm_pool: LLMPool, dir_name: str):
         sym_converter = SympyConverter(rs_code, params)
         self.left_deriv = prompt_complete_inf[dir_name]['left_deriv'].replace('/', '_')
         self.rs_code = sym_converter.rs_code
@@ -135,18 +141,29 @@ class SolutionTranslator(object):
         self.llm_pool = llm_pool
 
     def translate(self):
+        cached_pool = self.llm_pool.deepcopy()
+        left_side = ' = ' + BaseTokenConverter(self.left_deriv, 1).convert(cached_pool) + '{power: 1.0}'
         add_str = []
-        left_side = ' = ' + BaseTokenConverter(self.left_deriv, 1).convert(self.llm_pool) + '{power: 1.0}'
+
+        if cached_pool.terms_max_num < len(self.sympy_code.args):
+            cached_pool.terms_max_num = len(self.sympy_code.args)
+
         if self.sympy_code.is_Add:
             for mul_term in self.sympy_code.args:
-                converted_term = MulConverter(mul_term, self.llm_pool).to_epde()
+                converted_term = MulConverter(mul_term, cached_pool).to_epde()
                 if converted_term is None:
                     return None
                 add_str.append(converted_term)
+            self.llm_pool.from_copy(cached_pool)
             return " + ".join(add_str) + left_side
+
         elif self.sympy_code.is_Mul:
-            converted_term = MulConverter(self.sympy_code, self.llm_pool).to_epde()
-            return None if converted_term is None else converted_term + left_side
+            converted_term = MulConverter(self.sympy_code, cached_pool).to_epde()
+            if converted_term is None:
+                return None
+            else:
+                self.llm_pool.from_copy(cached_pool)
+                return converted_term + left_side
         else:
             raise Exception('Unexpected form in sympy structure: could not find Add or Mul to convert')
 
@@ -160,10 +177,16 @@ if __name__ == '__main__':
                  'du/dt = c[0] * u * du/dx + c[1] * d^2u/dx^2 + c[2] * du/dx * t': (2.15, 37.057907826954576),
                  'du/dt = c[0] * du/dx + c[1] * du/dt * d^2u/dx^2': (1.75, 542.9853705131861),
                  'du/dt = c[0] * du/dx + c[1] * t * du/dx': (1.2, 442.49077370655203)}
-    rs4 = 'params[0] * derivs_dict["du/dx"] ** 3 * t + ((params[1] * derivs_dict["du/dx"] ** 2 * np.cos(params[2] * t +1)) * x**2) * u +params[3] * derivs_dict["du/dt"] * (t**2 + 2)'
+    rs1 = 'params[0] * derivs_dict["du/dx"] ** 3 * t + ((params[1] * derivs_dict["du/dx"] ** 2 * np.cos(params[2] * t +1)) * x**2) * u +params[3] * derivs_dict["du/dt"] * (t**2 + 2)'
+    rs2 = 'params[0] * derivs_dict["d^2u/dt^2"] ** 2 * t**3 + (params[1] * derivs_dict["du/dx"] * np.arcsin(params[2] * t**2)) * x**3 * u'
+    rs3 = 'params[0] * np.arcsin(1.67335*t**2)'
+
     llm_pool = LLMPool()
-    trans4 = SolutionTranslator(rs4, np.array([1.2, 5.678, 6.5421, 4.12]), llm_pool, 'sindy-burg').translate()
-    epde_classes = llm_pool.to_epde_classes()
+    st1 = SolutionTranslator(rs1, np.array([1.2, 5.678, 6.5421, 4.12]), llm_pool, 'sindy-burg').translate()
+    st2 = SolutionTranslator(rs2, np.array([2.1, 10.1, 9.2]), llm_pool, 'sindy-burg').translate()
+    st3 = SolutionTranslator(rs3, np.array([2.1, ]), llm_pool, 'sindy-burg').translate()
+    epde_classes, lambda_strs = llm_pool.to_epde_classes()
+
     rs5 = 'params[0] * np.sqrt(u)'
     ex1 = sympify('sin(t)').func.__name__
     ex111 = str(sympify('sin(t)').func)
