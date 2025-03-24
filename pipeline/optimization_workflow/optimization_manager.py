@@ -25,10 +25,10 @@ class OptManager:
         self._pruner = None
         self._n_parent_cand = n_candidates
 
-    def call_pruner(self, n_alive=5):
+    def call_pruner(self):
         self._pruner = Pruner(self.eq_buffer, self.evaluator, self._n_parent_cand, self.dir_name)
-        pruned_track = self._pruner.cut_by_knee()
-        return pruned_track
+        pruned_track, by_project_track = self._pruner.cut_by_knee()
+        return pruned_track, by_project_track
 
     def explore_solutions(self):
         self.step_0()

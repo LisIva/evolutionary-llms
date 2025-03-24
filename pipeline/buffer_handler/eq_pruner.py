@@ -27,21 +27,20 @@ class Pruner(object):
                                  len(self.full_records_track[candidate[0]].params)).subset
             for sub_eq in eq_subset:
                 if sub_eq not in self.full_records_track.keys():
-                    complex_score, relat_score, params = self.evaluator.pruner_eval(sub_eq.feq_code,
-                                                                                  sub_eq.feq_str, sub_eq.P)
+                    complex_score, relat_score, params = self.evaluator.pruner_eval(sub_eq.feq_code, sub_eq.feq_str,
+                                                                                    sub_eq.P, self.eq_buffer)
                     # self.eq_buffer.push_subset_record(sub_eq.feq_str, complex_score, relat_score, loss,
                     #                                   sub_eq.feq_code, params)
                     enriched_track[sub_eq.feq_str] = (complex_score, relat_score)
         return enriched_track
 
-    def cut_by_knee(self, n_alive=5):
+    def cut_by_knee(self):
         k_reorder = KneeReorder(self.enriched_track)
         pruned_track = k_reorder.projection_scores.sorted_dict
-        if len(pruned_track) < n_alive:
-            # call a fun similar to enrich_track
-            pass
+        by_project_track = k_reorder.by_projection.sorted_dict
+
         # k_reorder.knee_plot(plot_type='projection')
-        return pruned_track
+        return pruned_track, by_project_track
 
 
 eq_code = 'def equation_v1(t: np.ndarray, x: np.ndarray, u: np.ndarray, derivs_dict: dict(), params: np.ndarray):\n    right_side = params[0] * u * derivs_dict["du/dx"] + params[1] * derivs_dict["du/dx"] + params[2] * derivs_dict["d^2u/dx^2"]\n    string_form_of_the_equation = "du/dt = c[0] * u * du/dx + c[1] * du/dx + c[2] * d^2u/dx^2"\n    len_of_params = 3\n    return right_side, string_form_of_the_equation, len_of_params'

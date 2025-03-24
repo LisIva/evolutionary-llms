@@ -146,7 +146,7 @@ class KneeReorder(object):
 
         self.end_point = self.find_end_point()
         self.start_point = self.find_start_point()
-        self.projection_scores = self.calc_projection_scores()
+        self.projection_scores, self.by_projection = self.calc_projection_scores()
 
     def knee_plot(self, plot_type='projection'):
         kp = KneePlot(self.opt_track, self.knee_scores, self.projection_scores, self.end_point, self.start_point)
@@ -178,7 +178,7 @@ class KneeReorder(object):
 
     def calc_projection_scores(self):
         v = Vector(self.start_point, self.end_point)
-        projection_scores = {}
+        projection_scores, by_projection = {}, {}
         for item in self._by_complexity.sorted_dict.items():
             xi = Point(item[1][0], item[1][1], item[0])
             vi = Vector(self.start_point, xi)
@@ -186,10 +186,14 @@ class KneeReorder(object):
             projection = np.dot(v.coords, vi.coords) / v.self_dot() * v.coords
             ri = vi.coords - projection
 
+            project_score = np.sqrt(np.sum(ri * ri))
             if ri[0] < 0. and ri[1] < 0.:# and item[1][1] < 400.:
-                projection_scores[item[0]] = np.sqrt(np.sum(ri * ri)) # max ~= 3.5-4.0
+                projection_scores[item[0]] = project_score # max ~= 3.5-4.0
+                by_projection[item[0]] = project_score
+            else:
+                by_projection[item[0]] = -project_score
         # proj_scores_sorted = SortedDict(projection_scores, reverse=True)
-        return SortedDict(projection_scores, reverse=True)
+        return SortedDict(projection_scores, reverse=True), SortedDict(by_projection, reverse=True)
 
 
 if __name__ == '__main__':
