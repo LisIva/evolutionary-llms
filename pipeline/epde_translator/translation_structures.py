@@ -9,6 +9,8 @@ class LLMPool(object):
     def __init__(self):
         self.simple_tokens_pow = {'t': (0, 0), 'x': (0, 0)}
         self.max_deriv_orders = {'max_deriv_t': 1, 'max_deriv_x': 1}
+        self.max_deriv_pow = {'data_fun_pow': 1, 'deriv_fun_pow': 1}
+
         self.special_tokens_pow = {}  # key: как епде будет выводить токен юзеру, val - лямбда-функция как его посчитать
         self.factors_max_num = 1
         self.terms_max_num = 1
@@ -19,6 +21,7 @@ class LLMPool(object):
         self.special_tokens_pow = cached_pool.special_tokens_pow
         self.factors_max_num = cached_pool.factors_max_num
         self.terms_max_num = cached_pool.terms_max_num
+        self.max_deriv_pow = cached_pool.max_deriv_pow
 
     def deepcopy(self):
         llmpool = LLMPool()
@@ -27,6 +30,7 @@ class LLMPool(object):
         llmpool.special_tokens_pow = copy.deepcopy(self.special_tokens_pow)
         llmpool.factors_max_num = self.factors_max_num
         llmpool.terms_max_num = self.terms_max_num
+        llmpool.max_deriv_pow = self.max_deriv_pow.copy()
         return llmpool
 
     def to_epde_classes(self):

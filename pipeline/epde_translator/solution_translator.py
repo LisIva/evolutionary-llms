@@ -14,7 +14,7 @@ class BaseTokenConverter(object):
         self.power = power
 
     def convert(self, pool: LLMPool):
-        def set_power(key):
+        def set_tx_power(key):
             if pool.simple_tokens_pow[key][0] == 0:
                 pool.set_token_pow(key, self.power, self.power)
             elif pool.simple_tokens_pow[key][0] > self.power:
@@ -22,20 +22,27 @@ class BaseTokenConverter(object):
             elif pool.simple_tokens_pow[key][1] < self.power:
                 pool.set_token_pow(key, pool.simple_tokens_pow[key][0], self.power)
 
+        def set_derivs_pow(key):
+            if pool.max_deriv_pow[key] < self.power:
+                pool.max_deriv_pow[key] = self.power
+
         if self.token == 'u':
+            set_derivs_pow('data_fun_pow')
             return 'u'
         elif self.token == 't':
-            set_power('t')
+            set_tx_power('t')
             return 't'
         elif self.token == 'x':
-            set_power('x')
+            set_tx_power('x')
             return 'x'
-        elif self.token == 'du_dt':
-            return 'du/dx1'
-        elif self.token == 'du_dx':
-            return 'du/dx2'
-        elif len(self.token) == 7:
-            return self.__convert_high_deriv(pool)
+        else:
+            set_derivs_pow('deriv_fun_pow')
+            if self.token == 'du_dt':
+                return 'du/dx1'
+            elif self.token == 'du_dx':
+                return 'du/dx2'
+            elif len(self.token) == 7:
+                return self.__convert_high_deriv(pool)
 
     def __convert_high_deriv(self, pool: LLMPool):
         var = self.token[-2]
@@ -178,7 +185,7 @@ if __name__ == '__main__':
                  'du/dt = c[0] * du/dx + c[1] * du/dt * d^2u/dx^2': (1.75, 542.9853705131861),
                  'du/dt = c[0] * du/dx + c[1] * t * du/dx': (1.2, 442.49077370655203)}
     rs1 = 'params[0] * derivs_dict["du/dx"] ** 3 * t + ((params[1] * derivs_dict["du/dx"] ** 2 * np.cos(params[2] * t +1)) * x**2) * u +params[3] * derivs_dict["du/dt"] * (t**2 + 2)'
-    rs2 = 'params[0] * derivs_dict["d^2u/dt^2"] ** 2 * t**3 + (params[1] * derivs_dict["du/dx"] * np.arcsin(params[2] * t**2)) * x**3 * u'
+    rs2 = 'params[0] * derivs_dict["d^2u/dt^2"] ** 2 * t**3 + (params[1] * derivs_dict["du/dx"] * np.arcsin(params[2] * t**2)) * x**3 * u**5'
     rs3 = 'params[0] * np.arcsin(1.67335*t**2)'
 
     llm_pool = LLMPool()
